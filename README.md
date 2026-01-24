@@ -1,8 +1,8 @@
-# Project Shaka
+# DataRand
 
 **A Decentralized Intelligence & Computing Ecosystem for African Development**
 
-Project Shaka transforms idle devices and human expertise across Africa into a sovereign intelligence network that creates economic opportunities while funding education.
+DataRand transforms idle devices and human expertise across Africa into a sovereign intelligence network that creates economic opportunities while funding education.
 
 ## Table of Contents
 
@@ -20,7 +20,7 @@ Project Shaka transforms idle devices and human expertise across Africa into a s
 
 Africa faces a critical challenge: high youth unemployment and dependence on expensive foreign cloud infrastructure. While global demand for AI services surges, African talent and resources remain underutilized.
 
-Project Shaka reverses this by building a decentralized network where:
+Project DataRand reverses this by building a decentralized network where:
 - Idle consumer devices become productive compute resources
 - Human intelligence contributes to AI training and validation
 - Economic activity directly funds local education initiatives
@@ -38,14 +38,14 @@ This keeps Africa as a consumer rather than a producer of digital infrastructure
 
 ## Solution
 
-Project Shaka applies a distributed infrastructure model where hardware ownership is spread across millions of independent participants. This enables:
+Project DataRand applies a distributed infrastructure model where hardware ownership is spread across millions of independent participants. This enables:
 
 - **Extreme configuration flexibility** - Adapt to diverse hardware and network conditions
 - **Geographic coverage** - Leverage Africa's vast geographic diversity
 - **Resilience** - No centralized choke points or single points of failure
 - **Cost efficiency** - Dramatically reduce infrastructure costs
 
-Unlike generic task marketplaces, Project Shaka is designed as a mobile-native, Africa-first intelligence network optimized for edge compute, speech and language data, human validation, and localized datasets.
+Unlike generic task marketplaces, Project DataRand is designed as a mobile-native, Africa-first intelligence network optimized for edge compute, speech and language data, human validation, and localized datasets.
 
 ## How It Works
 
@@ -90,7 +90,7 @@ Progression unlocks higher-value tasks and responsibilities, transforming partic
 
 ## Economic Model
 
-Project Shaka employs a demand-driven issuance model where rewards are tied directly to real client payments rather than speculative schedules.
+Project DataRand employs a demand-driven issuance model where rewards are tied directly to real client payments rather than speculative schedules.
 
 Token supply is minted proportionally to actual economic activity, ensuring long-term stability and avoiding inflationary collapse common in early decentralized networks.
 
@@ -101,7 +101,7 @@ Token supply is minted proportionally to actual economic activity, ensuring long
 
 ## Social Impact
 
-At the core of Project Shaka is a circular economic loop linking global AI demand to local educational investment.
+At the core of Project DataRand is a circular economic loop linking global AI demand to local educational investment.
 
 A fixed percentage of network transaction fees is allocated to an **Education Fund** that supports:
 - Primary education access
@@ -144,6 +144,6 @@ These mechanisms protect against malicious behavior, collusion, and localized fa
 
 ---
 
-Project Shaka is not merely a decentralized compute network. It is a full-stack intelligence economy designed to convert idle devices and human insight into economic participation, educational reinvestment, and sovereign digital infrastructure.
+Project DataRand is not merely a decentralized compute network. It is a full-stack intelligence economy designed to convert idle devices and human insight into economic participation, educational reinvestment, and sovereign digital infrastructure.
 
-By combining transparent contribution tracking, meaningful impact storytelling, and scalable technical architecture, Project Shaka positions Africa as an active producer of global intelligence rather than a passive consumer.
+By combining transparent contribution tracking, meaningful impact storytelling, and scalable technical architecture, Project DataRand positions Africa as an active producer of global intelligence rather than a passive consumer.
