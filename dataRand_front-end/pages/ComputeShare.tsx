@@ -565,3 +565,9 @@ export default function ComputeShare() {
     </AppLayout>
   );
 }
+
+export async function getServerSideProps() {
+  return {
+    props: {}
+  };
+}

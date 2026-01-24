@@ -101,7 +101,7 @@ export default function ClientTasks() {
       const { error } = await supabase.rpc('process_task_payment', {
         p_assignment_id: reviewDialog.assignment.id,
         p_approved: approved,
-        p_feedback: feedback || null,
+        p_feedback: feedback || undefined,
       });
 
       if (error) {
