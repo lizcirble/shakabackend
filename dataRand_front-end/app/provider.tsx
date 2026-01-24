@@ -10,10 +10,16 @@ import { wagmiConfig } from "./wagmiConfig";
 
 const queryClient = new QueryClient();
 
+const privyAppId = process.env.NEXT_PUBLIC_PRIVY_APP_ID;
+
+if (!privyAppId) {
+  throw new Error("NEXT_PUBLIC_PRIVY_APP_ID is not set. Please set this environment variable.");
+}
+
 export default function Provider({ children }: { children: React.ReactNode }) {
   return (
     <PrivyProvider
-      appId={process.env.NEXT_PUBLIC_PRIVY_APP_ID!}
+      appId={privyAppId}
       config={privyConfig}
     >
       <QueryClientProvider client={queryClient}>
