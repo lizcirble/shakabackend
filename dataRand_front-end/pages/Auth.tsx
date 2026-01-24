@@ -14,7 +14,8 @@ import SignUpButton from "@/components/ui/signupButton";
 export default function Auth() {
   const {
     user,
-    loading: authLoading
+    loading: authLoading,
+    profile
   } = useAuth();
   const router = useRouter();
   const {
@@ -22,10 +23,14 @@ export default function Auth() {
   } = useToast();
   const [role, setRole] = useState<"worker" | "client" | null>(null);
   useEffect(() => {
-    if (!authLoading && user) {
-      router.push("/tasks");
+    if (!authLoading && user && profile) {
+      if (profile.role === "worker") {
+        router.push("/tasks");
+      } else if (profile.role === "client") {
+        router.push("/client/tasks");
+      }
     }
-  }, [user, authLoading, router]);
+  }, [user, authLoading, profile, router]);
   if (authLoading) {
     return <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-4">
