@@ -22,6 +22,8 @@ export default function Auth() {
     toast
   } = useToast();
   const [role, setRole] = useState<"worker" | "client" | null>(null);
+
+  // Redirect if already authenticated and profile is loaded
   useEffect(() => {
     if (!authLoading && user && profile) {
       if (profile.role === "worker") {
@@ -31,6 +33,7 @@ export default function Auth() {
       }
     }
   }, [user, authLoading, profile, router]);
+
   if (authLoading) {
     return <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-4">
@@ -39,6 +42,15 @@ export default function Auth() {
         </div>
       </div>;
   }
+
+  // If user is already logged in and profile is loaded, but not redirected by useEffect yet,
+  // this means the component is still rendering. We should not show the auth form.
+  // This handles cases where the useEffect might not have completed its redirection
+  // before the rest of the component renders.
+  if (user && profile) {
+    return null; // Or a loading spinner, but null is fine as useEffect will redirect
+  }
+
   return <div className="min-h-screen flex flex-col lg:flex-row relative overflow-hidden">
       {/* Left Side - Branding */}
       <div className="lg:flex-1 bg-card p-8 lg:p-12 flex flex-col justify-center relative">

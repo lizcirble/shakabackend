@@ -88,11 +88,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (data.user) {
       const { error: profileError } = await supabase
         .from("profiles")
-        .update({ role })
-        .eq("auth_id", data.user.id);
+        .insert({ auth_id: data.user.id, role });
 
       if (profileError) {
-        console.error("Error updating profile role:", profileError);
+        console.error("Error creating profile with role:", profileError);
+        // Optionally, handle this error more robustly, e.g., by deleting the user
+        // if profile creation fails, to prevent orphaned user accounts.
       }
     }
 

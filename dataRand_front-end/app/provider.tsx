@@ -19,7 +19,7 @@ if (!privyAppId) {
 export default function Provider({ children }: { children: React.ReactNode }) {
   return (
     <PrivyProvider
-      appId={privyAppId}
+      appId={privyAppId as string}
       config={privyConfig}
     >
       <QueryClientProvider client={queryClient}>
