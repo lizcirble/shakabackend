@@ -78,7 +78,7 @@ export default function SignUpButton({ selectedRole }: SignUpButtonProps) {
       disabled={!selectedRole}
       className="w-full h-12 gradient-primary text-primary-foreground font-semibold text-base group"
     >
-      Sign Up
+      Enter the Arena
       <ArrowRightIcon
         size={20}
         className="ml-2 group-hover:translate-x-1 transition-transform"
