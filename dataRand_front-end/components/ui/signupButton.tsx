@@ -1,27 +1,27 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { usePrivy } from "@privy-io/react-auth";
 import { Button } from "./button";
 import { ArrowRightIcon } from "../icons/DataRandIcons";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
+import { useToast } from "@/hooks/use-toast";
 
 interface SignUpButtonProps {
   selectedRole: "worker" | "client" | null;
 }
 
 export default function SignUpButton({ selectedRole }: SignUpButtonProps) {
-  const { login, user } = usePrivy();
-  const { profile } = useAuth();
+  const { user, profile, signIn } = useAuth();
   const router = useRouter();
+  const { toast } = useToast();
 
   // prevents duplicate profile creation
   const hasCreatedProfile = useRef(false);
 
-  const handleSignUp = async () => {
+  const handleSignUp = () => {
     if (!selectedRole) return;
-    await login(); // open Privy modal
+    signIn(); // open Privy modal
   };
 
   useEffect(() => {
@@ -66,11 +66,16 @@ export default function SignUpButton({ selectedRole }: SignUpButtonProps) {
         }
       } catch (err) {
         console.error("Profile creation failed:", err);
+        toast({
+          title: "Error",
+          description: "Failed to create your profile. Please try again.",
+          variant: "destructive",
+        });
       }
     };
 
     createProfile();
-  }, [user, selectedRole, profile, router]);
+  }, [user, selectedRole, profile, router, toast]);
 
   return (
     <Button
