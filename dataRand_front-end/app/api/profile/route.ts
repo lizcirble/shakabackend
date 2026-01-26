@@ -1,5 +1,3 @@
-// app/api/profile/route.ts
-
 import { createServerClient } from "@supabase/ssr";
 import { cookies as nextCookies } from "next/headers";
 import { NextResponse } from "next/server";
@@ -14,47 +12,39 @@ export async function POST(request: Request) {
     );
   }
 
-  const cookieStore = await nextCookies();
+  const cookieStore = nextCookies();
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        getAll() {
-          return cookieStore.getAll();
+        async getAll() {
+          return (await cookieStore).getAll();
         },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) =>
-            cookieStore.set(name, value, options)
-          );
-        },
+        async setAll(cookiesToSet) {
+          const resolvedCookieStore = await cookieStore;
+          cookiesToSet.forEach(({ name, value, options }) => {
+            resolvedCookieStore.set(name, value, options);
+          });
+        }
       },
     }
   );
 
-  try {
-    const { data, error } = await supabase
-      .from("profiles")
-      .insert([{ auth_id, role }]);
+  const { data, error } = await supabase
+    .from("profiles")
+    .insert([{ auth_id, role }]);
 
-    if (error) {
-      console.error("Error inserting profile:", error);
-      return NextResponse.json(
-        { message: "Error creating profile", error: error.message },
-        { status: 500 }
-      );
-    }
-
+  if (error) {
     return NextResponse.json(
-      { message: "Profile created successfully", data },
-      { status: 201 }
-    );
-  } catch (error: any) {
-    console.error("Unexpected error:", error);
-    return NextResponse.json(
-      { message: "Unexpected error", error: error.message },
+      { message: "Error creating profile", error: error.message },
       { status: 500 }
     );
   }
+
+  return NextResponse.json(
+    { message: "Profile created successfully", data },
+    { status: 201 }
+  );
 }
