@@ -15,6 +15,7 @@ import { GeometricBackground } from "@/components/ui/GeometricBackground";
 import type { RealtimePostgresChangesPayload } from "@supabase/supabase-js";
 
 
+
 import {
   RefreshIcon,
   PowerIcon,
@@ -82,6 +83,7 @@ export default function Tasks() {
 
   // Real-time subscription for new tasks
 
+
 useEffect(() => {
   if (!profile) return;
 
@@ -96,10 +98,13 @@ useEffect(() => {
         filter: "status=eq.available",
       },
       (payload: RealtimePostgresChangesPayload<Task>) => {
+        const newTask = payload.new as Task; // ⬅️ force type
+
         toast({
           title: "🦁 New Task Available!",
-          description: `"${payload.new?.title}" just posted.`,
+          description: `"${newTask.title}" just posted.`,
         });
+
         fetchTasks();
       }
     )
@@ -109,6 +114,7 @@ useEffect(() => {
     supabase.removeChannel(channel);
   };
 }, [profile, fetchTasks, toast]);
+
 
 
   const handleAcceptTask = async (taskId: string) => {
