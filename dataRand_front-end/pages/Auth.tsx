@@ -10,46 +10,36 @@ import { DataRandLogo, TaskIcon, PowerIcon, ArrowRightIcon, StrengthIcon } from 
 import SignUpButton from "@/components/ui/signupButton";
 
 export default function Auth() {
-  const { user, loading: authLoading, profile } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const router = useRouter();
 
-  // Redirect logged-in users immediately - they should never see this page
+  // Redirect logged-in users immediately
   useEffect(() => {
-    if (authLoading) return; // Wait for auth to load
-
-    // If user is logged in (with or without profile), redirect them
-    if (user) {
-      console.log("User is already logged in, redirecting to /tasks");
+    if (!authLoading && user) {
+      console.log("User is logged in, redirecting to /tasks");
       router.push("/tasks");
     }
   }, [user, authLoading, router]);
 
-  // Show loading state while checking auth
-  if (authLoading) {
+  // CRITICAL: Show loading state while checking auth OR if user exists
+  // This prevents the flash of auth page before redirect
+  if (authLoading || user) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-4">
           <DataRandLogo size={64} className="text-primary animate-pulse" />
           <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+          {user && (
+            <p className="text-sm text-muted-foreground animate-pulse">
+              Redirecting to your tasks...
+            </p>
+          )}
         </div>
       </div>
     );
   }
 
-  // If user is logged in, show nothing (redirect is happening)
-  if (user) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="flex flex-col items-center gap-4">
-          <DataRandLogo size={64} className="text-primary animate-pulse" />
-          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-          <p className="text-sm text-muted-foreground">Redirecting...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Only show auth page for logged-out users
+  // Only render auth page when we're certain user is NOT logged in
   return (
     <div className="min-h-screen flex flex-col lg:flex-row relative overflow-hidden">
       {/* Left Side - Branding */}
