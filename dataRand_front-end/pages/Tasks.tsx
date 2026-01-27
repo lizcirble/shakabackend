@@ -30,11 +30,7 @@ export default function Tasks() {
   const [selectedType, setSelectedType] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
 
- useEffect(() => {
-  if (!authLoading && !profile) {
-    router.push("/auth");
-  }
-}, [authLoading, profile, router]);
+
 
 
   const fetchTasks = async () => {
