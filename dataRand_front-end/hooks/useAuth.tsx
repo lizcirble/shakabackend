@@ -38,14 +38,46 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
-    if (ready) {
-      if (authenticated && user) {
-        fetchProfile(user.id);
-      } else {
-        setProfile(null);
-        setLoading(false);
+    const handleAuthChange = async () => {
+      if (ready) {
+        if (authenticated && user) {
+          setLoading(true);
+          const { data: existingProfile, error: fetchError } = await supabase
+            .from("profiles")
+            .select("*")
+            .eq("auth_id", user.id)
+            .maybeSingle();
+
+          if (fetchError) {
+            console.error("Error fetching profile:", fetchError);
+            setProfile(null);
+          } else if (existingProfile) {
+            setProfile(existingProfile as Profile);
+          } else {
+            // No existing profile, create one
+            const { data: newProfile, error: createError } = await supabase
+              .from("profiles")
+              .insert({ auth_id: user.id, email: user.email || null }) // Assuming email is available from Privy user object
+              .select("*")
+              .single();
+
+            if (createError) {
+              console.error("Error creating profile:", createError);
+              setProfile(null);
+            } else {
+              setProfile(newProfile as Profile);
+              console.log("New user signed up! Profile data:", newProfile, "User email:", user.email); // Log new user data and email
+            }
+          }
+          setLoading(false);
+        } else {
+          setProfile(null);
+          setLoading(false);
+        }
       }
-    }
+    };
+
+    handleAuthChange();
   }, [ready, authenticated, user]);
 
   const signIn = () => {
