@@ -151,4 +151,15 @@
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
+  
+  .animate-slide-cards {
+    animation: slideCards 6s infinite;
+  }
+  
+  @keyframes slideCards {
+    0%, 16.67% { transform: translateX(0%); }
+    33.33%, 50% { transform: translateX(-100%); }
+    66.67%, 83.33% { transform: translateX(-200%); }
+    100% { transform: translateX(0%); }
+  }
 }

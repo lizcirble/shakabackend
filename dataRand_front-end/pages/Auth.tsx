@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Loader2 } from "lucide-react";
+import { Loader2, Zap, DollarSign, Globe } from "lucide-react";
 import { GeometricBackground, NdebeleBorder, ClawDivider, CornerAccent } from "@/components/ui/GeometricBackground";
 import { DataRandLogo, TaskIcon, ShieldIcon, WorkIcon, PowerIcon, ArrowRightIcon, StrengthIcon } from "@/components/icons/DataRandIcons";
 import SignUpButton from "@/components/ui/signupButton";
@@ -122,16 +122,21 @@ export default function Auth() {
             </CardDescription>
           </CardHeader>
           <CardContent className="pb-12 flex flex-col items-center pt-8">
-            <div className="flex flex-wrap gap-2 justify-center mb-6">
-              <Badge variant="secondary" className="text-xs">
-                🚀 Quick Setup
-              </Badge>
-              <Badge variant="outline" className="text-xs">
-                💰 Instant Earnings
-              </Badge>
-              <Badge variant="secondary" className="text-xs">
-                🌍 Global Impact
-              </Badge>
+            <div className="relative w-full h-16 mb-8 overflow-hidden">
+              <div className="absolute inset-0 flex animate-slide-cards">
+                <div className="flex items-center gap-3 p-4 rounded-lg bg-primary/5 border border-primary/20 min-w-full">
+                  <Zap className="h-5 w-5 text-primary" />
+                  <span className="text-sm font-medium text-primary">Quick Setup</span>
+                </div>
+                <div className="flex items-center gap-3 p-4 rounded-lg bg-secondary/5 border border-secondary/20 min-w-full">
+                  <DollarSign className="h-5 w-5 text-secondary" />
+                  <span className="text-sm font-medium text-secondary">Instant Earnings</span>
+                </div>
+                <div className="flex items-center gap-3 p-4 rounded-lg bg-accent/5 border border-accent/20 min-w-full">
+                  <Globe className="h-5 w-5 text-accent" />
+                  <span className="text-sm font-medium text-accent">Global Impact</span>
+                </div>
+              </div>
             </div>
             <SignUpButton />
           </CardContent>

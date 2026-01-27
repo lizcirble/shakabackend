@@ -16,7 +16,9 @@ export async function POST(request: Request) {
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    // Use the service_role key to bypass RLS for profile creation
+    // Ensure SUPABASE_SERVICE_ROLE_KEY is set in your environment variables
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
     {
       cookies: {
         async getAll() {
