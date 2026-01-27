@@ -13,14 +13,18 @@ export default function Auth() {
   const { user, loading: authLoading, profile } = useAuth();
   const router = useRouter();
 
-  // Redirect if already authenticated and profile is loaded
+  // Redirect logged-in users immediately - they should never see this page
   useEffect(() => {
-    if (!authLoading && user && profile) {
-      // All users go to the same tasks page
+    if (authLoading) return; // Wait for auth to load
+
+    // If user is logged in (with or without profile), redirect them
+    if (user) {
+      console.log("User is already logged in, redirecting to /tasks");
       router.push("/tasks");
     }
-  }, [user, authLoading, profile, router]);
+  }, [user, authLoading, router]);
 
+  // Show loading state while checking auth
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -32,10 +36,20 @@ export default function Auth() {
     );
   }
 
-  if (user && profile) {
-    return null; // useEffect will redirect
+  // If user is logged in, show nothing (redirect is happening)
+  if (user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="flex flex-col items-center gap-4">
+          <DataRandLogo size={64} className="text-primary animate-pulse" />
+          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+          <p className="text-sm text-muted-foreground">Redirecting...</p>
+        </div>
+      </div>
+    );
   }
 
+  // Only show auth page for logged-out users
   return (
     <div className="min-h-screen flex flex-col lg:flex-row relative overflow-hidden">
       {/* Left Side - Branding */}
@@ -63,7 +77,7 @@ export default function Auth() {
             Your Platform for Earning and Creating
           </h1>
           <p className="text-muted-foreground text-lg mb-10">
-            One account. Complete freedom. Earn from tasks or create your own switch between both whenever you want. No barriers, no separate roles, just seamless opportunity.
+            One account. Complete freedom. Earn from tasks or create your own—switch between both whenever you want. No barriers, no separate roles, just seamless opportunity.
           </p>
 
           <ClawDivider className="mb-10 opacity-30" />
@@ -95,7 +109,7 @@ export default function Auth() {
               </div>
               <div>
                 <h3 className="font-semibold mb-1 group-hover:text-accent transition-colors">Complete Flexibility</h3>
-                <p className="text-sm text-muted-foreground">Switch between earning and creating whenever you want. No limitations, no role restrictions.</p>
+                <p className="text-sm text-muted-foreground">Switch between earning and creating whenever you want. No limitations, no restrictions.</p>
               </div>
             </div>
 

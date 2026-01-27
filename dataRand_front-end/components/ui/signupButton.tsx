@@ -72,6 +72,14 @@ export default function SignUpButton() {
         if (!res.ok) {
           const err = await res.json();
           console.error("Profile creation error:", err);
+          
+          // Check for environment variable error
+          if (err.error?.includes("URL and Key are required")) {
+            throw new Error(
+              "Server configuration error. Please contact support. (Missing Supabase credentials)"
+            );
+          }
+          
           throw new Error(err.message || "Failed to create profile");
         }
 
