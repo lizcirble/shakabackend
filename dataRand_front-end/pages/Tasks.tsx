@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { useAuth } from "@/hooks/useAuth";
@@ -12,6 +12,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
 import { GeometricBackground } from "@/components/ui/GeometricBackground";
+import type { RealtimePostgresChangesPayload } from "@supabase/supabase-js";
+
+
 import {
   RefreshIcon,
   PowerIcon,
@@ -30,10 +33,10 @@ export default function Tasks() {
   const [selectedType, setSelectedType] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
 
-
-
-
-  const fetchTasks = async () => {
+  // Use useCallback to memoize fetchTasks and prevent infinite loops
+  const fetchTasks = useCallback(async () => {
+    if (!profile) return; // Don't fetch if no profile
+    
     setLoading(true);
     try {
       // Fetch task types
@@ -68,42 +71,45 @@ export default function Tasks() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [profile, selectedType]); // Only depend on profile and selectedType, NOT toast
 
+  // Fetch tasks only once when profile loads or selectedType changes
   useEffect(() => {
     if (profile) {
       fetchTasks();
     }
-  }, [profile, selectedType]);
+  }, [profile, selectedType, fetchTasks]);
 
   // Real-time subscription for new tasks
-  useEffect(() => {
-    if (!profile) return;
 
-    const channel = supabase
-      .channel("tasks-realtime")
-      .on(
-        "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "tasks",
-          filter: "status=eq.available",
-        },
-        (payload) => {
-          toast({
-            title: "🦁 New Task Available!",
-            description: `"${(payload.new as Task).title}" just posted.`,
-          });
-          fetchTasks();
-        }
-      )
-      .subscribe();
+useEffect(() => {
+  if (!profile) return;
 
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [profile]);
+  const channel = supabase
+    .channel("tasks-realtime")
+    .on(
+      "postgres_changes",
+      {
+        event: "INSERT",
+        schema: "public",
+        table: "tasks",
+        filter: "status=eq.available",
+      },
+      (payload: RealtimePostgresChangesPayload<Task>) => {
+        toast({
+          title: "🦁 New Task Available!",
+          description: `"${payload.new?.title}" just posted.`,
+        });
+        fetchTasks();
+      }
+    )
+    .subscribe();
+
+  return () => {
+    supabase.removeChannel(channel);
+  };
+}, [profile, fetchTasks, toast]);
+
 
   const handleAcceptTask = async (taskId: string) => {
     if (!profile) return;
@@ -158,7 +164,24 @@ export default function Tasks() {
   );
 
   if (authLoading) {
-    return null;
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <PowerIcon size={64} className="text-primary animate-pulse" />
+          <p className="text-sm text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!profile) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <p className="text-sm text-muted-foreground">No profile found. Please sign in.</p>
+        </div>
+      </div>
+    );
   }
 
   return (
