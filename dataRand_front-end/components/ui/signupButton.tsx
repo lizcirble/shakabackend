@@ -7,11 +7,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 
-interface SignUpButtonProps {
-  selectedRole: "worker" | "client" | null;
-}
-
-export default function SignUpButton({ selectedRole }: SignUpButtonProps) {
+export default function SignUpButton() {
   const { user, profile, signIn } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
@@ -20,24 +16,24 @@ export default function SignUpButton({ selectedRole }: SignUpButtonProps) {
   const hasCreatedProfile = useRef(false);
 
   const handleSignUp = () => {
-    if (!selectedRole) return;
     signIn(); // open Privy modal
   };
 
   useEffect(() => {
-    if (!user || !selectedRole) return;
+    if (!user) return;
 
     // If profile already exists → redirect
     if (profile) {
-      if (profile.role === "worker") {
-        router.push("/tasks");
-      } else {
+      // For existing users, redirect based on their established role
+      if (profile.role === "client") {
         router.push("/client/tasks");
+      } else {
+        router.push("/tasks");
       }
       return;
     }
 
-    // Prevent double firing
+    // Prevent double firing for new user profile creation
     if (hasCreatedProfile.current) return;
     hasCreatedProfile.current = true;
 
@@ -50,7 +46,7 @@ export default function SignUpButton({ selectedRole }: SignUpButtonProps) {
           },
           body: JSON.stringify({
             auth_id: user.id,
-            role: selectedRole,
+            role: "worker", // Default role for all new users
           }),
         });
 
@@ -59,28 +55,25 @@ export default function SignUpButton({ selectedRole }: SignUpButtonProps) {
           throw new Error(err.message || "Failed to create profile");
         }
 
-        if (selectedRole === "worker") {
-          router.push("/tasks");
-        } else {
-          router.push("/client/tasks");
-        }
+        // Redirect all new users to the main tasks page
+        router.push("/tasks");
+
       } catch (err) {
         console.error("Profile creation failed:", err);
         toast({
           title: "Error",
-          description: "Failed to create your profile. Please try again.",
+          description: (err as Error).message || "Failed to create your profile. Please try again.",
           variant: "destructive",
         });
       }
     };
 
     createProfile();
-  }, [user, selectedRole, profile, router, toast]);
+  }, [user, profile, router, toast]);
 
   return (
     <Button
       onClick={handleSignUp}
-      disabled={!selectedRole}
       className="w-full h-12 gradient-primary text-primary-foreground font-semibold text-base group"
     >
       Enter the Arena
