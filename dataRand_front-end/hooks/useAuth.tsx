@@ -54,27 +54,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           } else if (existingProfile) {
             setProfile(existingProfile as Profile);
           } else {
-            // No existing profile, create one
-            // Extract email address properly from Privy user object
+            // No existing profile, create one via API route
             const emailAddress = user.email?.address || null;
             const fullName = user.google?.name || user.twitter?.name || emailAddress?.split("@")[0] || null;
-            
-            const { data: newProfile, error: createError } = await supabase
-              .from("profiles")
-              .insert({ 
-                auth_id: user.id,  // Use auth_id field
-                email: emailAddress,  // Extract the address string
-                full_name: fullName  // Add full_name if available
-              })
-              .select("*")
-              .single();
 
-            if (createError) {
-              console.error("Error creating profile:", createError);
+            try {
+              const res = await fetch("/api/profile", {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                  auth_id: user.id,
+                  email: emailAddress,
+                  full_name: fullName,
+                }),
+              });
+
+              if (!res.ok) {
+                const err = await res.json();
+                throw new Error(err.message || "Failed to create profile via API");
+              }
+
+              const result = await res.json();
+              setProfile(result.data as Profile); // Assuming the API returns the created profile data
+              console.log("New user signed up! Profile data:", result.data, "User email:", emailAddress);
+            } catch (apiError) {
+              console.error("Error creating profile via API:", apiError);
               setProfile(null);
-            } else {
-              setProfile(newProfile as Profile);
-              console.log("New user signed up! Profile data:", newProfile, "User email:", emailAddress);
             }
           }
           setLoading(false);
