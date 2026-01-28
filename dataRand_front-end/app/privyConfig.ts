@@ -1,4 +1,5 @@
 import type { PrivyClientConfig } from "@privy-io/react-auth";
+import { base, baseSepolia, arbitrum, arbitrumSepolia } from "wagmi/chains";
 
 export const privyConfig: PrivyClientConfig = {
   embeddedWallets: {
@@ -8,18 +9,18 @@ export const privyConfig: PrivyClientConfig = {
     showWalletUIs: true,
   },
 
-  loginMethods: ['github', 'google', 'twitter', 'email'],
+  loginMethods: ['google', 'email'],
 
   appearance: {
     showWalletLoginFirst: true,
     logo: '/logo.png',
   },
 
-  defaultChain: 'base',
+  defaultChain: base,
   supportedChains: [
-    'base',
-    'base-sepolia',
-    'arbitrum',
-    'arbitrum-sepolia',
+    base,
+    baseSepolia,
+    arbitrum,
+    arbitrumSepolia,
   ],
 };
