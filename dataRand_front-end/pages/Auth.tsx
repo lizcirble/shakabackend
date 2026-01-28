@@ -10,20 +10,20 @@ import { DataRandLogo, TaskIcon, PowerIcon, ArrowRightIcon, StrengthIcon } from 
 import SignUpButton from "@/components/ui/signupButton";
 
 export default function Auth() {
-  const { user, loading: authLoading } = useAuth();
+  const { user, profile, loading: authLoading } = useAuth();
   const router = useRouter();
 
   // Redirect logged-in users immediately
   useEffect(() => {
-    if (!authLoading && user) {
-      console.log("User is logged in, redirecting to /tasks");
+    if (!authLoading && user && profile) {
+      console.log("User and profile loaded, redirecting to /tasks");
       router.push("/tasks");
     }
-  }, [user, authLoading, router]);
+  }, [user, profile, authLoading, router]);
 
   // CRITICAL: Show loading state while checking auth OR if user exists
   // This prevents the flash of auth page before redirect
-  if (authLoading || user) {
+  if (authLoading || (user && !profile)) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-4">
