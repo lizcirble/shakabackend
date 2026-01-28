@@ -15,38 +15,22 @@ export function useUser() {
       return
     }
 
-    if (!authenticated) {
+    if (!authenticated || !privyUser?.id) {
       setProfile(null)
       setIsLoading(false)
       return
     }
 
-    if (!privyUser || !privyUser.id) {
-      setIsLoading(true)
-      return
-    }
-
-    if (authenticated && privyUser) {
-      fetchOrCreateProfile(privyUser.id)
-    }
-  }, [ready, authenticated, privyUser])
+    fetchOrCreateProfile(privyUser.id)
+  }, [ready, authenticated, privyUser?.id])
 
   const fetchOrCreateProfile = async (userId: string) => {
-    setIsLoading(true)
-    
     try {
-      const { data: existingProfile, error: fetchError } = await supabase
+      const { data: existingProfile } = await supabase
         .from("profiles")
         .select("*")
         .eq("auth_id", userId)
         .maybeSingle()
-
-      if (fetchError) {
-        console.error("Error fetching profile:", fetchError)
-        setProfile(null)
-        setIsLoading(false)
-        return
-      }
 
       if (existingProfile) {
         setProfile(existingProfile as Profile)
@@ -59,9 +43,7 @@ export function useUser() {
 
       const response = await fetch("/api/profile", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           auth_id: userId,
           email: emailAddress,
@@ -69,39 +51,30 @@ export function useUser() {
         }),
       })
 
-      if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.message || "Failed to create profile")
+      if (response.ok) {
+        const result = await response.json()
+        setProfile(result.data as Profile)
       }
-
-      const result = await response.json()
-      setProfile(result.data as Profile)
-      
     } catch (error) {
-      console.error("Error in fetchOrCreateProfile:", error)
-      setProfile(null)
+      console.error("Profile error:", error)
     } finally {
       setIsLoading(false)
     }
   }
 
   const updateProfile = async (updates: Partial<Profile>) => {
-    if (!privyUser || !profile) return { error: new Error("Not authenticated or no profile") }
+    if (!privyUser || !profile) return { error: new Error("Not authenticated") }
 
-    try {
-      const { error } = await supabase
-        .from("profiles")
-        .update(updates)
-        .eq("auth_id", privyUser.id)
+    const { error } = await supabase
+      .from("profiles")
+      .update(updates)
+      .eq("auth_id", privyUser.id)
 
-      if (!error) {
-        setProfile({ ...profile, ...updates })
-      }
-
-      return { error }
-    } catch (error) {
-      return { error: error as Error }
+    if (!error) {
+      setProfile({ ...profile, ...updates })
     }
+
+    return { error }
   }
 
   return {
