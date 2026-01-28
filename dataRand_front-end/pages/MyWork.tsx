@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
+import withAuth from "@/components/withAuth";
 import {
   Dialog,
   DialogContent,
@@ -60,7 +61,7 @@ const answerSchema = z.object({
   answer: z.string().trim().min(1, "Answer is required").max(5000, "Answer must be less than 5000 characters"),
 });
 
-export default function MyWork() {
+function MyWork() {
   const { profile, loading: authLoading } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
@@ -545,3 +546,5 @@ function AssignmentGrid({
     </div>
   );
 }
+
+export default withAuth(MyWork);

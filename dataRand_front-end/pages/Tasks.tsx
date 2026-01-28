@@ -12,9 +12,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
 import { GeometricBackground } from "@/components/ui/GeometricBackground";
+import withAuth from "@/components/withAuth";
 import type { RealtimePostgresChangesPayload } from "@supabase/supabase-js";
-
-
 
 import {
   RefreshIcon,
@@ -23,8 +22,8 @@ import {
   TaskIcon,
 } from "@/components/icons/DataRandIcons";
 
-export default function Tasks() {
-  const { profile, loading: authLoading } = useAuth();
+function Tasks() {
+  const { profile } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
 
@@ -169,17 +168,6 @@ useEffect(() => {
     task.title.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  if (authLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <PowerIcon size={64} className="text-primary animate-pulse" />
-          <p className="text-sm text-muted-foreground">Loading...</p>
-        </div>
-      </div>
-    );
-  }
-
   if (!profile) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -269,3 +257,5 @@ useEffect(() => {
     </AppLayout>
   );
 }
+
+export default withAuth(Tasks);

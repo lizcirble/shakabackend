@@ -6,23 +6,19 @@ import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, Zap, Users, Coins } from "lucide-react";
 import { GeometricBackground, NdebeleBorder, ClawDivider, CornerAccent } from "@/components/ui/GeometricBackground";
-import { DataRandLogo, TaskIcon, PowerIcon, ArrowRightIcon, StrengthIcon } from "@/components/icons/DataRandIcons";
+import { DataRandLogo, TaskIcon, StrengthIcon } from "@/components/icons/DataRandIcons";
 import SignUpButton from "@/components/ui/signupButton";
 
 export default function Auth() {
   const { user, profile, loading: authLoading } = useAuth();
   const router = useRouter();
 
-  // Redirect logged-in users immediately
   useEffect(() => {
     if (!authLoading && user && profile) {
-      console.log("User and profile loaded, redirecting to /tasks");
       router.push("/tasks");
     }
   }, [user, profile, authLoading, router]);
 
-  // CRITICAL: Show loading state while checking auth OR if user exists
-  // This prevents the flash of auth page before redirect
   if (authLoading || (user && !profile)) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -31,15 +27,13 @@ export default function Auth() {
           <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
           {user && (
             <p className="text-sm text-muted-foreground animate-pulse">
-              Redirecting to your tasks...
+              Setting up your profile...
             </p>
           )}
         </div>
       </div>
     );
   }
-
-  // Only render auth page when we're certain user is NOT logged in
   return (
     <div className="min-h-screen flex flex-col lg:flex-row relative overflow-hidden">
       {/* Left Side - Branding */}

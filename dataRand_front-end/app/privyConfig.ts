@@ -1,27 +1,25 @@
-// privyConfig.ts
 import type { PrivyClientConfig } from "@privy-io/react-auth";
-import { base, baseSepolia, arbitrum, arbitrumSepolia } from "wagmi/chains";
 
 export const privyConfig: PrivyClientConfig = {
-  loginMethods: ["google", "email"],
-
   embeddedWallets: {
     ethereum: {
-      createOnLogin: "users-without-wallets", 
-    },
-
-
+      createOnLogin: 'users-without-wallets', 
+    },    
+    showWalletUIs: true,
   },
+
+  loginMethods: ['github', 'google', 'twitter', 'email'],
 
   appearance: {
     showWalletLoginFirst: true,
+    logo: '/logo.png',
   },
 
-  defaultChain: base,
+  defaultChain: 'base',
   supportedChains: [
-    base,
-    baseSepolia,
-    arbitrum,
-    arbitrumSepolia,
+    'base',
+    'base-sepolia',
+    'arbitrum',
+    'arbitrum-sepolia',
   ],
 };

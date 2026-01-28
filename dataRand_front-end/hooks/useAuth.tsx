@@ -20,71 +20,69 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const fetchProfile = async (userId: string) => {
+  const fetchOrCreateProfile = async (userId: string) => {
     setLoading(true);
-    const { data, error } = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("auth_id", userId)
-      .maybeSingle();
+    
+    try {
+      // First, try to fetch existing profile
+      const { data: existingProfile, error: fetchError } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("auth_id", userId)
+        .maybeSingle();
 
-    if (error) {
-      console.error("Error fetching profile:", error);
+      if (fetchError) {
+        console.error("Error fetching profile:", fetchError);
+        setProfile(null);
+        setLoading(false);
+        return;
+      }
+
+      if (existingProfile) {
+        // Profile exists, use it
+        setProfile(existingProfile as Profile);
+        setLoading(false);
+        return;
+      }
+
+      // No existing profile, create one via API route
+      const emailAddress = user?.email?.address || null;
+      const fullName = user?.google?.name || user?.twitter?.name || user?.github?.name || emailAddress?.split("@")[0] || null;
+
+      const response = await fetch("/api/profile", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          auth_id: userId,
+          email: emailAddress,
+          full_name: fullName,
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Failed to create profile via API");
+      }
+
+      const result = await response.json();
+      setProfile(result.data as Profile);
+      console.log("New user signed up! Profile data:", result.data, "User email:", emailAddress);
+      
+    } catch (apiError) {
+      console.error("Error creating profile via API:", apiError);
       setProfile(null);
-    } else {
-      setProfile(data as Profile | null);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   useEffect(() => {
     const handleAuthChange = async () => {
       if (ready) {
         if (authenticated && user) {
-          setLoading(true);
-          const { data: existingProfile, error: fetchError } = await supabase
-            .from("profiles")
-            .select("*")
-            .eq("auth_id", user.id)
-            .maybeSingle();
-
-          if (fetchError) {
-            console.error("Error fetching profile:", fetchError);
-            setProfile(null);
-          } else if (existingProfile) {
-            setProfile(existingProfile as Profile);
-          } else {
-            // No existing profile, create one via API route
-            const emailAddress = user.email?.address || null;
-            const fullName = user.google?.name || user.twitter?.name || emailAddress?.split("@")[0] || null;
-
-            try {
-              const res = await fetch("/api/profile", {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                  auth_id: user.id,
-                  email: emailAddress,
-                  full_name: fullName,
-                }),
-              });
-
-              if (!res.ok) {
-                const err = await res.json();
-                throw new Error(err.message || "Failed to create profile via API");
-              }
-
-              const result = await res.json();
-              setProfile(result.data as Profile); // Assuming the API returns the created profile data
-              console.log("New user signed up! Profile data:", result.data, "User email:", emailAddress);
-            } catch (apiError) {
-              console.error("Error creating profile via API:", apiError);
-              setProfile(null);
-            }
-          }
-          setLoading(false);
+          await fetchOrCreateProfile(user.id);
         } else {
           setProfile(null);
           setLoading(false);

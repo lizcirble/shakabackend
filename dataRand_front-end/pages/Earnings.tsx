@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { useAuth } from "@/hooks/useAuth";
+import withAuth from "@/components/withAuth";
 import { supabase, type Transaction } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -38,7 +39,7 @@ interface WithdrawalRequest {
   created_at: string;
 }
 
-export default function Earnings() {
+function Earnings() {
   const { profile, loading: authLoading } = useAuth();
   const router = useRouter();
 
@@ -410,3 +411,5 @@ export default function Earnings() {
     </AppLayout>
   );
 }
+
+export default withAuth(Earnings);
