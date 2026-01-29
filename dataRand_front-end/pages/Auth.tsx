@@ -3,6 +3,10 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { usePrivy } from "@privy-io/react-auth";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Zap, Users, Coins } from "lucide-react";
+import { GeometricBackground, NdebeleBorder, ClawDivider, CornerAccent } from "@/components/ui/GeometricBackground";
+import { DataRandLogo, TaskIcon, StrengthIcon } from "@/components/icons/DataRandIcons";
 import SignUpButton from "@/components/ui/signupButton";
 
 export default function Auth() {
