@@ -2,37 +2,21 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useAuth } from "@/hooks/useAuth";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, Zap, Users, Coins } from "lucide-react";
-import { GeometricBackground, NdebeleBorder, ClawDivider, CornerAccent } from "@/components/ui/GeometricBackground";
-import { DataRandLogo, TaskIcon, StrengthIcon } from "@/components/icons/DataRandIcons";
+import { usePrivy } from "@privy-io/react-auth";
 import SignUpButton from "@/components/ui/signupButton";
 
 export default function Auth() {
-  const { user, profile, loading: authLoading } = useAuth();
+  const { ready, authenticated } = usePrivy();
   const router = useRouter();
 
   useEffect(() => {
-    if (!authLoading && user && profile) {
+    if (ready && authenticated) {
       router.push("/my-work");
     }
-  }, [user, profile, authLoading, router]);
+  }, [ready, authenticated, router]);
 
-  if (authLoading || (user && !profile)) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="flex flex-col items-center gap-4">
-          <DataRandLogo size={64} className="text-primary animate-pulse" />
-          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-          {user && (
-            <p className="text-sm text-muted-foreground animate-pulse">
-              Setting up your profile...
-            </p>
-          )}
-        </div>
-      </div>
-    );
+  if (ready && authenticated) {
+    return null;
   }
   return (
     <div className="min-h-screen flex flex-col lg:flex-row relative overflow-hidden">
