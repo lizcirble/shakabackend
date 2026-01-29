@@ -24,92 +24,64 @@ import {
   TaskIcon,
 } from "@/components/icons/DataRandIcons";
 import { testSupabaseConnection, checkTasksTable } from "@/lib/supabase-test";
-import { useMockData } from "@/lib/mock-data";
 
 function Tasks() {
   const { profile } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
-  const mockData = useMockData();
 
   const [tasks, setTasks] = useState<Task[]>([]);
   const [taskTypes, setTaskTypes] = useState<TaskType[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedType, setSelectedType] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const [useMockDataFallback, setUseMockDataFallback] = useState(false);
 
-  // Use useCallback to memoize fetchTasks and prevent infinite loops
   const fetchTasks = useCallback(async () => {
-    if (!profile) {
-      console.log("No profile found, skipping task fetch");
-      return;
-    }
+    if (!profile) return;
     
     setLoading(true);
     try {
-      console.log("Fetching tasks for profile:", profile.id);
-      
-      // Test basic connection first
-      const { error: connectionError } = await supabase.from("profiles").select("count").limit(1);
-      if (connectionError) {
-        console.warn("Supabase connection failed, using mock data:", connectionError.message);
-        setUseMockDataFallback(true);
-        setTasks(mockData.tasks);
-        setTaskTypes(mockData.taskTypes);
-        setLoading(false);
-        return;
-      }
-      
-      // Fetch task types first
       const { data: types, error: typesError } = await supabase
         .from("task_types")
         .select("*");
         
-      if (typesError) {
-        console.error("Error fetching task types:", typesError);
-        setTaskTypes(mockData.taskTypes);
-      } else {
-        console.log("Task types fetched successfully:", types?.length || 0);
+      if (!typesError) {
         setTaskTypes(types as TaskType[] || []);
       }
 
-      // Build task query with simpler structure first
       let query = supabase
         .from("tasks")
         .select("*")
         .eq("status", "available")
         .order("created_at", { ascending: false });
 
-      // Apply type filter if selected
       if (selectedType) {
         query = query.eq("task_type_id", selectedType);
-        console.log("Filtering by task type:", selectedType);
       }
 
-      console.log("Executing task query...");
       const { data: tasksData, error: tasksError } = await query;
 
       if (tasksError) {
-        console.error("Error fetching tasks:", tasksError);
-        console.log("Using mock data as fallback");
-        setUseMockDataFallback(true);
-        setTasks(mockData.tasks);
+        toast({
+          title: "Failed to fetch tasks",
+          description: "Please check your Supabase configuration and try again.",
+          variant: "destructive",
+        });
+        setTasks([]);
       } else {
-        console.log("Tasks fetched successfully:", tasksData?.length || 0);
         setTasks((tasksData as Task[]) || []);
-        setUseMockDataFallback(false);
       }
-    } catch (err: any) {
-      console.error("Unexpected error in fetchTasks:", err);
-      console.log("Using mock data as fallback");
-      setUseMockDataFallback(true);
-      setTasks(mockData.tasks);
-      setTaskTypes(mockData.taskTypes);
+    } catch (err) {
+      toast({
+        title: "Connection Error",
+        description: "Unable to connect to database. Check your environment variables.",
+        variant: "destructive",
+      });
+      setTasks([]);
     } finally {
       setLoading(false);
     }
-  }, [profile, selectedType, toast, mockData]);
+  }, [profile, selectedType, toast]);
 
   // Test connection on mount
   useEffect(() => {
@@ -271,15 +243,6 @@ useEffect(() => {
             <span className="text-sm sm:text-base">Refresh</span>
           </Button>
         </div>
-
-        {/* Mock Data Warning */}
-        {useMockDataFallback && (
-          <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-3 sm:p-4">
-            <p className="text-yellow-600 text-sm sm:text-base font-medium">
-              ⚠️ Using demo data - Supabase connection unavailable
-            </p>
-          </div>
-        )}
 
         {/* Debug Info (remove in production) */}
         {process.env.NODE_ENV === 'development' && (
