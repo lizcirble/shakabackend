@@ -62,10 +62,6 @@ const withAuth = <P extends object>(
       return null;
     }
 
-    if (!currentUser) {
-      return <LoadingScreen message="Setting up profile..." />;
-    }
-
     return <WrappedComponent {...props} />;
   };
 

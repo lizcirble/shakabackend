@@ -15,7 +15,7 @@ export default function Auth() {
 
   useEffect(() => {
     if (ready && authenticated) {
-      router.push("/my-work");
+      router.push("/tasks");
     }
   }, [ready, authenticated, router]);
 
