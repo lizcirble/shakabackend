@@ -4,24 +4,12 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import withAuth from "@/components/withAuth";
 import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { ProfileAvatar } from "@/components/ui/profile-avatar";
 import { Badge } from "@/components/ui/badge";
 import { BarChart, DollarSign, CheckCircle, Star, Zap, Activity } from "lucide-react";
 
 function ProfilePage() {
   const { profile } = useAuth();
-
-  const getInitials = (name: string | null | undefined, email: string | null | undefined) => {
-    if (name) {
-      return name
-        .split(" ")
-        .map((n) => n[0])
-        .join("")
-        .toUpperCase()
-        .slice(0, 2);
-    }
-    return email?.slice(0, 2).toUpperCase() || "U";
-  };
 
   return (
     <AppLayout>
@@ -32,12 +20,13 @@ function ProfilePage() {
             <div className="h-24 bg-gradient-to-r from-primary/20 to-secondary/20" />
           </CardHeader>
           <CardContent className="p-6 flex items-start gap-6 -mt-12">
-            <Avatar className="h-24 w-24 border-4 border-background ring-2 ring-primary">
-              <AvatarImage src={profile?.avatar_url || undefined} />
-              <AvatarFallback className="text-3xl bg-primary/10 text-primary font-bold">
-                {getInitials(profile?.full_name, profile?.email)}
-              </AvatarFallback>
-            </Avatar>
+            <ProfileAvatar
+              src={profile?.avatar_url}
+              name={profile?.full_name}
+              email={profile?.email}
+              size="xl"
+              className="border-4 border-background ring-2 ring-primary"
+            />
             <div className="pt-12">
               <h1 className="text-2xl font-bold">{profile?.full_name}</h1>
               <p className="text-muted-foreground">{profile?.email}</p>

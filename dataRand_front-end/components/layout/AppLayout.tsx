@@ -12,7 +12,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { ProfileAvatar } from "@/components/ui/profile-avatar";
 import { Badge } from "@/components/ui/badge";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
@@ -78,18 +78,6 @@ export function AppLayout({ children }: { children: ReactNode }) {
       setShowSignOutModal(false);
       router.push("/auth");
     }, 500);
-  };
-
-  const getInitials = (name: string | null, email: string | null) => {
-    if (name) {
-      return name
-        .split(" ")
-        .map((n) => n[0])
-        .join("")
-        .toUpperCase()
-        .slice(0, 2);
-    }
-    return email?.slice(0, 2).toUpperCase() || "U";
   };
 
   return (
@@ -160,22 +148,24 @@ export function AppLayout({ children }: { children: ReactNode }) {
                   variant="ghost"
                   className="relative h-11 w-11 rounded-full p-0 ring-2 ring-primary/20 hover:ring-primary/50 transition-all"
                 >
-                  <Avatar className="h-11 w-11">
-                    <AvatarImage src={profile?.avatar_url || undefined} />
-                    <AvatarFallback className="bg-gradient-to-br from-primary/20 to-secondary/20 text-primary font-bold">
-                      {getInitials(profile?.full_name || null, profile?.email || null)}
-                    </AvatarFallback>
-                  </Avatar>
+                  <ProfileAvatar
+                    src={profile?.avatar_url}
+                    name={profile?.full_name}
+                    email={profile?.email}
+                    size="md"
+                    className="ring-2 ring-primary/20"
+                  />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-64">
                 <div className="flex items-center gap-3 p-4 bg-gradient-to-br from-primary/5 to-transparent">
-                  <Avatar className="h-12 w-12 ring-2 ring-primary/30">
-                    <AvatarImage src={profile?.avatar_url || undefined} />
-                    <AvatarFallback className="bg-primary/10 text-primary font-bold">
-                      {getInitials(profile?.full_name || null, profile?.email || null)}
-                    </AvatarFallback>
-                  </Avatar>
+                  <ProfileAvatar
+                    src={profile?.avatar_url}
+                    name={profile?.full_name}
+                    email={profile?.email}
+                    size="md"
+                    className="ring-2 ring-primary/30"
+                  />
                   <div className="flex flex-col">
                     <span className="font-semibold">
                       {profile?.full_name || profile?.email?.split("@")[0]}
