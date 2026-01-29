@@ -41,19 +41,21 @@ export function useUser() {
       const emailAddress = privyUser?.email?.address || null
       const fullName = privyUser?.google?.name || privyUser?.twitter?.name || privyUser?.github?.name || emailAddress?.split("@")[0] || null
 
-      const response = await fetch("/api/profile", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+      const { data: newProfile, error } = await supabase
+        .from("profiles")
+        .insert({
           auth_id: userId,
           email: emailAddress,
           full_name: fullName,
-        }),
-      })
+          role: "worker",
+        })
+        .select()
+        .single();
 
-      if (response.ok) {
-        const result = await response.json()
-        setProfile(result.data as Profile)
+      if (error) {
+        console.error("Error creating profile:", error);
+      } else {
+        setProfile(newProfile as Profile);
       }
     } catch (error) {
       console.error("Profile error:", error)
