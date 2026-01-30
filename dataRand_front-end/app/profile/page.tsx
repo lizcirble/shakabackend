@@ -3,22 +3,24 @@
 import { AppLayout } from "@/components/layout/AppLayout";
 import withAuth from "@/components/withAuth";
 import { useAuth } from "@/hooks/useAuth";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useLocalTasks } from "@/hooks/useLocalTasks";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ProfileAvatar } from "@/components/ui/profile-avatar";
 import { Badge } from "@/components/ui/badge";
-import { BarChart, DollarSign, CheckCircle, Star, Zap, Activity, Cpu } from "lucide-react";
+import { BarChart, DollarSign, CheckCircle, Star, Zap, Activity, Cpu, FileText } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { useState, useEffect } from "react";
 
 function ProfilePageContent() {
   const { profile } = useAuth();
+  const { getTasksByClientId } = useLocalTasks();
   const [cpuUsage, setCpuUsage] = useState(0);
-  // const [gpuUsage, setGpuUsage] = useState(0); // Removed GPU usage state
+
+  const userTasks = profile ? getTasksByClientId(profile.id) : [];
 
   useEffect(() => {
     const interval = setInterval(() => {
       setCpuUsage(Math.floor(Math.random() * 100));
-      // setGpuUsage(Math.floor(Math.random() * 100)); // Removed GPU usage update
     }, 1000);
     return () => clearInterval(interval);
   }, []);
@@ -76,6 +78,42 @@ function ProfilePageContent() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Created Tasks */}
+        {userTasks.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
+                <FileText className="h-5 w-5" /> My Created Tasks
+              </CardTitle>
+              <CardDescription>
+                Tasks you've created for the community
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {userTasks.slice(0, 5).map((task) => (
+                  <div key={task.id} className="flex items-center justify-between p-3 rounded-lg border border-border/50">
+                    <div className="flex-1">
+                      <h4 className="font-medium text-sm">{task.title}</h4>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        ${task.payout_amount} • {task.estimated_time_minutes} min • {task.worker_count} workers
+                      </p>
+                    </div>
+                    <Badge variant={task.status === 'available' ? 'default' : 'secondary'} className="text-xs">
+                      {task.status}
+                    </Badge>
+                  </div>
+                ))}
+                {userTasks.length > 5 && (
+                  <p className="text-xs text-muted-foreground text-center pt-2">
+                    +{userTasks.length - 5} more tasks
+                  </p>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Skill Progression */}
         <Card>
@@ -137,7 +175,6 @@ function ProfilePageContent() {
               </div>
               <Progress value={cpuUsage} className="h-2" />
             </div>
-            {/* Removed GPU Usage */}
             <p className="text-xs text-muted-foreground">
               Real-time view of your device's contribution when compute sharing is active.
             </p>

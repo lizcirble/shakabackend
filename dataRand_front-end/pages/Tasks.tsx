@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { useAuth } from "@/hooks/useAuth";
+import { useLocalTasks } from "@/hooks/useLocalTasks";
 import { supabase, type Task, type TaskType } from "@/lib/supabase";
 import { TaskCard } from "@/components/tasks/TaskCard";
 import { TaskFilters } from "@/components/tasks/TaskFilters";
@@ -39,6 +40,9 @@ function Tasks() {
   const [loading, setLoading] = useState(true);
   const [selectedType, setSelectedType] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+
+  // Import local tasks hook
+  const { tasks: localTasks } = useLocalTasks();
 
   const fetchTasks = useCallback(async () => {
     if (!profile) {
@@ -83,10 +87,23 @@ function Tasks() {
 
       // Filter by selected type if needed
       let filteredTasks = taskResult.data || [];
-      if (selectedType && taskResult.data) {
+      
+      // Add local tasks to the mix
+      const localTasksFormatted = localTasks.map(localTask => ({
+        ...localTask,
+        // Convert local task format to match expected Task format
+        task_type: { name: 'Local Task' }, // You might want to map this properly
+      }));
+      
+      // Combine server tasks with local tasks
+      const allTasks = [...filteredTasks, ...localTasksFormatted];
+      
+      if (selectedType && allTasks) {
         SupabaseDebugger.log("Filtering tasks by type:", selectedType);
-        filteredTasks = taskResult.data.filter(task => task.task_type_id === selectedType);
+        filteredTasks = allTasks.filter(task => task.task_type_id === selectedType);
         SupabaseDebugger.log("Filtered tasks count:", filteredTasks.length);
+      } else {
+        filteredTasks = allTasks;
       }
 
       setTasks(filteredTasks as Task[]);
@@ -156,7 +173,7 @@ function Tasks() {
     if (profile) {
       fetchTasks();
     }
-  }, [profile, selectedType, fetchTasks]);
+  }, [profile, selectedType, fetchTasks, localTasks]);
 
   // Real-time subscription for new tasks
 

@@ -141,11 +141,13 @@ export function useComputeDevices() {
     const isPhone = device === 'phone';
     const currentState = isPhone ? phoneState : laptopState;
     const setState = isPhone ? setPhoneState : setLaptopState;
-    // const deviceType = isPhone ? 'mobile' : 'desktop'; // Not needed for hardcoded
     
     setToggling(device);
     
     try {
+      // Add delay for futuristic loading effect
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
       if (!currentState.isActive) {
         // Simulate Start session
         const startTime = new Date();
@@ -181,8 +183,6 @@ export function useComputeDevices() {
         localStorage.removeItem(`${device}ComputeStartTime`);
 
         const sessionEarnings = currentState.sessionMinutes * 0.001;
-        // const eduAmount = sessionEarnings * 0.15; // Not needed for hardcoded
-        // const workerAmount = sessionEarnings * 0.85; // Not needed for hardcoded
         
         toast({
           title: `${isPhone ? 'Phone' : 'Laptop'} Compute Stopped`,

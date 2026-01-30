@@ -237,9 +237,12 @@ export default function CreateTask() {
       const existingTasks = JSON.parse(localStorage.getItem('localTasks') || '[]');
       localStorage.setItem('localTasks', JSON.stringify([...existingTasks, newTask]));
 
+      // Trigger storage event to refresh other components
+      window.dispatchEvent(new Event('storage'));
+
       toast({
-        title: "Task Created!",
-        description: "Task saved to local storage.",
+        title: "Task created successfully",
+        description: "Your task has been posted and is now available to workers.",
       });
 
       router.push("/client/tasks"); // Redirect as before
@@ -583,8 +586,16 @@ export default function CreateTask() {
                   className="flex-1 gradient-primary text-primary-foreground font-semibold order-1 sm:order-2"
                   disabled={loading || uploadingMedia}
                 >
-                  {loading || uploadingMedia ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
+                  {loading ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                      Creating Task...
+                    </>
+                  ) : uploadingMedia ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                      Uploading Media...
+                    </>
                   ) : (
                     <>
                       <Plus className="h-4 w-4 mr-2" />
