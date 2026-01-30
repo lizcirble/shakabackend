@@ -15,6 +15,13 @@ interface DeviceToggleCardProps {
   isLoading: boolean;
   sessionMinutes?: number;
   demandStatus?: 'connected' | 'waiting' | 'none';
+  currentDevice?: {
+    name: string;
+    type: 'phone' | 'laptop';
+    os: string;
+    browser: string;
+  } | null;
+  otherDeviceActive?: boolean;
 }
 
 export function DeviceToggleCard({
@@ -23,12 +30,18 @@ export function DeviceToggleCard({
   onToggle,
   isLoading,
   sessionMinutes = 0,
-  demandStatus = 'none'
+  demandStatus = 'none',
+  currentDevice,
+  otherDeviceActive = false
 }: DeviceToggleCardProps) {
   const Icon = deviceType === 'phone' ? Smartphone : Laptop;
   const label = deviceType === 'phone' ? 'Phone' : 'Laptop';
   const [cpuUsage, setCpuUsage] = useState(0);
   const [memoryUsage, setMemoryUsage] = useState(0);
+
+  // Check if this card represents the current device
+  const isCurrentDevice = currentDevice?.type === deviceType;
+  const isDisabled = !isCurrentDevice || (otherDeviceActive && !isEnabled);
 
   // Simulate live resource usage when active
   useEffect(() => {
@@ -53,11 +66,26 @@ export function DeviceToggleCard({
     return null;
   };
 
+  const getDeviceStatusText = () => {
+    if (!isCurrentDevice) {
+      return `Not available (Current: ${currentDevice?.name || 'Unknown'})`;
+    }
+    if (otherDeviceActive && !isEnabled) {
+      return 'Disabled (Other device active)';
+    }
+    if (isEnabled) {
+      return 'Active and running';
+    }
+    return 'Ready to start';
+  };
+
   const cardContent = (
     <Card 
       className={`border transition-all duration-300 ${
         isEnabled 
           ? 'border-primary/50 bg-gradient-to-br from-primary/10 to-transparent shadow-md shadow-primary/10' 
+          : isDisabled
+          ? 'border-border/30 bg-muted/30 opacity-60'
           : 'border-border/50 hover:border-primary/30' 
       }`}
     >
@@ -80,14 +108,19 @@ export function DeviceToggleCard({
                   }`} />
                 </div>
                 <div className="flex flex-col">
-                  <span className="font-medium text-sm">{label}</span>
+                  <span className="font-medium text-sm">
+                    {isCurrentDevice ? currentDevice?.name || label : label}
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    {getDeviceStatusText()}
+                  </span>
                   {isEnabled && sessionMinutes > 0 ? (
-                    <span className="text-xs text-muted-foreground flex items-center gap-1">
+                    <span className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
                       <Clock className="h-3 w-3" />
-                      {sessionMinutes} min
+                      {sessionMinutes} min active
                     </span>
                   ) : getDemandStatusText() ? (
-                    <span className={`text-xs ${demandStatus === 'connected' ? 'text-green-500' : 'text-yellow-500'}`}>
+                    <span className={`text-xs mt-1 ${demandStatus === 'connected' ? 'text-green-500' : 'text-yellow-500'}`}>
                       {getDemandStatusText()}
                     </span>
                   ) : null}
@@ -98,7 +131,7 @@ export function DeviceToggleCard({
                 <Switch 
                   checked={isEnabled}
                   onCheckedChange={onToggle}
-                  disabled={isLoading}
+                  disabled={isLoading || isDisabled}
                 />
                 <Badge 
                   variant={isEnabled ? "default" : "secondary"}

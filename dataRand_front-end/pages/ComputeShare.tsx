@@ -21,7 +21,7 @@ const OUT_OF_SCHOOL_CHILDREN = 98000000;
 
 export default function ComputeShare() {
   const { profile, loading: authLoading } = useAuth();
-  const { phoneState, laptopState, loading: devicesLoading, toggling, toggleDevice } = useComputeDevices();
+  const { phoneState, laptopState, loading: devicesLoading, toggling, toggleDevice, currentDevice } = useComputeDevices();
   const router = useRouter();
   const { toast } = useToast();
   
@@ -279,6 +279,8 @@ export default function ComputeShare() {
               isLoading={toggling === 'phone'}
               sessionMinutes={phoneState.sessionMinutes}
               demandStatus={phoneState.demandStatus}
+              currentDevice={currentDevice}
+              otherDeviceActive={laptopState.isActive}
             />
             <DeviceToggleCard
               deviceType="laptop"
@@ -287,6 +289,8 @@ export default function ComputeShare() {
               isLoading={toggling === 'laptop'}
               sessionMinutes={laptopState.sessionMinutes}
               demandStatus={laptopState.demandStatus}
+              currentDevice={currentDevice}
+              otherDeviceActive={phoneState.isActive}
             />
           </CardContent>
         </Card>

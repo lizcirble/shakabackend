@@ -35,58 +35,106 @@ export function useComputeDevices() {
   
   const [loading, setLoading] = useState(true);
   const [toggling, setToggling] = useState<'phone' | 'laptop' | null>(null);
+  const [currentDevice, setCurrentDevice] = useState<{
+    name: string;
+    type: 'phone' | 'laptop';
+    os: string;
+    browser: string;
+  } | null>(null);
   
   const phoneIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const laptopIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const phoneStartRef = useRef<Date | null>(null);
   const laptopStartRef = useRef<Date | null>(null);
 
-  // Initialize device states (hardcoded simulation)
+  // Detect current device
   useEffect(() => {
-    if (!profile) return;
+    const detectDevice = () => {
+      const userAgent = navigator.userAgent;
+      
+      // Detect device type
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent);
+      const deviceType = isMobile ? 'phone' : 'laptop';
+      
+      // Detect OS
+      let os = 'Unknown';
+      if (/Windows/i.test(userAgent)) os = 'Windows';
+      else if (/Mac/i.test(userAgent)) os = 'macOS';
+      else if (/Linux/i.test(userAgent)) os = 'Linux';
+      else if (/Android/i.test(userAgent)) os = 'Android';
+      else if (/iPhone|iPad/i.test(userAgent)) os = 'iOS';
+      
+      // Detect browser
+      let browser = 'Unknown';
+      if (/Chrome/i.test(userAgent) && !/Edge/i.test(userAgent)) browser = 'Chrome';
+      else if (/Firefox/i.test(userAgent)) browser = 'Firefox';
+      else if (/Safari/i.test(userAgent) && !/Chrome/i.test(userAgent)) browser = 'Safari';
+      else if (/Edge/i.test(userAgent)) browser = 'Edge';
+      
+      // Generate device name
+      const deviceName = `${os} ${deviceType === 'phone' ? 'Phone' : 'Computer'}`;
+      
+      setCurrentDevice({
+        name: deviceName,
+        type: deviceType,
+        os,
+        browser
+      });
+    };
+    
+    detectDevice();
+  }, []);
+
+  // Initialize device states
+  useEffect(() => {
+    if (!profile || !currentDevice) return;
     
     const initializeDevices = async () => {
       setLoading(true);
       try {
-        // Simulate fetching profile data
-        // const { data: profileData } = await supabase... // Commented out Supabase call
+        // Load from local storage
+        const phoneActive = localStorage.getItem('phoneComputeActive') === 'true';
+        const laptopActive = localStorage.getItem('laptopComputeActive') === 'true';
         
-        // Hardcode installed status
+        // Ensure only one device can be active at a time
+        if (phoneActive && laptopActive) {
+          localStorage.setItem('phoneComputeActive', 'false');
+          localStorage.setItem('laptopComputeActive', 'false');
+        }
+        
         setPhoneState(prev => ({
           ...prev,
-          isInstalled: true,
-          isActive: localStorage.getItem('phoneComputeActive') === 'true' // Load from local storage
+          isActive: phoneActive && !laptopActive
         }));
         
         setLaptopState(prev => ({
           ...prev,
-          isInstalled: true,
-          isActive: localStorage.getItem('laptopComputeActive') === 'true' // Load from local storage
+          isActive: laptopActive && !phoneActive
         }));
 
-        // Simulate active sessions
-        if (localStorage.getItem('phoneComputeActive') === 'true') {
+        // Restore active sessions
+        if (phoneActive && !laptopActive) {
           const startTime = new Date(localStorage.getItem('phoneComputeStartTime') || Date.now());
           const minutes = Math.floor((Date.now() - startTime.getTime()) / 60000);
           setPhoneState(prev => ({
             ...prev,
             isActive: true,
-            sessionId: 'simulated-phone-session',
+            sessionId: 'phone-session',
             sessionMinutes: minutes,
-            demandStatus: Math.random() > 0.5 ? 'connected' : 'waiting' // Simulate demand
+            demandStatus: 'connected'
           }));
           phoneStartRef.current = startTime;
         }
 
-        if (localStorage.getItem('laptopComputeActive') === 'true') {
+        if (laptopActive && !phoneActive) {
           const startTime = new Date(localStorage.getItem('laptopComputeStartTime') || Date.now());
           const minutes = Math.floor((Date.now() - startTime.getTime()) / 60000);
           setLaptopState(prev => ({
             ...prev,
             isActive: true,
-            sessionId: 'simulated-laptop-session',
+            sessionId: 'laptop-session',
             sessionMinutes: minutes,
-            demandStatus: Math.random() > 0.5 ? 'connected' : 'waiting' // Simulate demand
+            demandStatus: 'connected'
           }));
           laptopStartRef.current = startTime;
         }
@@ -99,7 +147,7 @@ export function useComputeDevices() {
     };
     
     initializeDevices();
-  }, [profile]);
+  }, [profile, currentDevice]);
 
   // Phone timer
   useEffect(() => {
@@ -140,7 +188,19 @@ export function useComputeDevices() {
     
     const isPhone = device === 'phone';
     const currentState = isPhone ? phoneState : laptopState;
+    const otherState = isPhone ? laptopState : phoneState;
     const setState = isPhone ? setPhoneState : setLaptopState;
+    const setOtherState = isPhone ? setLaptopState : setPhoneState;
+    
+    // Prevent toggling if other device is active
+    if (!currentState.isActive && otherState.isActive) {
+      toast({
+        title: "Only One Device Allowed",
+        description: `Please stop ${isPhone ? 'laptop' : 'phone'} compute sharing first.`,
+        variant: "destructive"
+      });
+      return;
+    }
     
     setToggling(device);
     
@@ -149,7 +209,21 @@ export function useComputeDevices() {
       await new Promise(resolve => setTimeout(resolve, 4000));
       
       if (!currentState.isActive) {
-        // Simulate Start session
+        // Stop other device if somehow active
+        if (otherState.isActive) {
+          const otherDevice = isPhone ? 'laptop' : 'phone';
+          localStorage.setItem(`${otherDevice}ComputeActive`, 'false');
+          localStorage.removeItem(`${otherDevice}ComputeStartTime`);
+          setOtherState(prev => ({
+            ...prev,
+            isActive: false,
+            sessionId: null,
+            sessionMinutes: 0,
+            demandStatus: 'none'
+          }));
+        }
+        
+        // Start current device
         const startTime = new Date();
         localStorage.setItem(`${device}ComputeActive`, 'true');
         localStorage.setItem(`${device}ComputeStartTime`, startTime.toISOString());
@@ -220,6 +294,7 @@ export function useComputeDevices() {
     laptopState,
     loading,
     toggling,
-    toggleDevice
+    toggleDevice,
+    currentDevice
   };
 }

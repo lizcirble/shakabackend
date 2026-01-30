@@ -20,7 +20,7 @@ interface ComputeSession {
   status: 'completed' | 'interrupted';
 }
 
-export function ComputeHistory() {
+export default function ComputeHistory() {
   const { profile } = useAuth();
   const router = useRouter();
   const [sessions, setSessions] = useState<ComputeSession[]>([]);

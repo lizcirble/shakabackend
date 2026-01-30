@@ -317,7 +317,7 @@ useEffect(() => {
       });
     }
   };
-
+  
   const filteredTasks = tasks.filter((task) =>
     task.title.toLowerCase().includes(searchQuery.toLowerCase())
   );
