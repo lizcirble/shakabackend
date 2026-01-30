@@ -10,7 +10,7 @@ import { BarChart, DollarSign, CheckCircle, Star, Zap, Activity, Cpu, Gpu } from
 import { Progress } from "@/components/ui/progress";
 import { useState, useEffect } from "react";
 
-function ProfilePage() {
+function ProfilePageContent() {
   const { profile } = useAuth();
   const [cpuUsage, setCpuUsage] = useState(0);
   const [gpuUsage, setGpuUsage] = useState(0);
@@ -158,4 +158,5 @@ function ProfilePage() {
   );
 }
 
-export default withAuth(ProfilePage);
+const ProfilePage = withAuth(ProfilePageContent);
+export default ProfilePage;

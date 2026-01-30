@@ -5,6 +5,8 @@ import { cn } from "@/lib/utils";
 import { useState, useEffect, useRef } from "react";
 import { Button } from "./button";
 import { Edit } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import { useToast } from "@/hooks/use-toast";
 
 interface ProfileAvatarProps {
   src?: string | null;
@@ -35,6 +37,8 @@ export function ProfileAvatar({
   size = "md",
   className,
 }: ProfileAvatarProps) {
+  const { updateProfile } = useAuth();
+  const { toast } = useToast();
   const [avatarSrc, setAvatarSrc] = useState(src);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -64,10 +68,26 @@ export function ProfileAvatar({
     const file = event.target.files?.[0];
     if (file) {
       const reader = new FileReader();
-      reader.onloadend = () => {
+      reader.onloadend = async () => {
         const base64String = reader.result as string;
         localStorage.setItem("avatar", base64String);
         setAvatarSrc(base64String);
+
+        // Update profile in backend
+        const { error } = await updateProfile({ avatar_url: base64String });
+
+        if (error) {
+          toast({
+            title: "Error",
+            description: `Failed to update profile picture: ${error.message}`,
+            variant: "destructive",
+          });
+        } else {
+          toast({
+            title: "Success",
+            description: "Profile picture updated successfully!",
+          });
+        }
       };
       reader.readAsDataURL(file);
     }

@@ -39,7 +39,6 @@ export default function SettingsPage() {
     timezone: "UTC",
     autoAcceptTasks: false,
     showEarnings: true,
-    computeSharingEnabled: false, // New state for compute sharing
   });
 
   const handleProfileUpdate = async () => {
@@ -260,19 +259,6 @@ export default function SettingsPage() {
               <Switch
                 checked={preferences.showEarnings}
                 onCheckedChange={(checked) => setPreferences({ ...preferences, showEarnings: checked })}
-              />
-            </div>
-            <Separator /> {/* Add separator before new toggle */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4">
-              <div className="flex-1">
-                <Label>Compute Sharing</Label>
-                <p className="text-xs sm:text-sm text-muted-foreground">
-                  Allow your device to contribute to distributed computing tasks.
-                </p>
-              </div>
-              <Switch
-                checked={preferences.computeSharingEnabled}
-                onCheckedChange={(checked) => setPreferences({ ...preferences, computeSharingEnabled: checked })}
               />
             </div>
           </CardContent>

@@ -269,7 +269,6 @@ export default function ComputeShare() {
             <DeviceToggleCard
               deviceType="phone"
               isEnabled={phoneState.isActive}
-              isInstalled={phoneState.isInstalled}
               onToggle={() => handleToggleDevice('phone')}
               isLoading={toggling === 'phone'}
               sessionMinutes={phoneState.sessionMinutes}
@@ -278,7 +277,6 @@ export default function ComputeShare() {
             <DeviceToggleCard
               deviceType="laptop"
               isEnabled={laptopState.isActive}
-              isInstalled={laptopState.isInstalled}
               onToggle={() => handleToggleDevice('laptop')}
               isLoading={toggling === 'laptop'}
               sessionMinutes={laptopState.sessionMinutes}
