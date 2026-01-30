@@ -17,7 +17,7 @@ import { ProfileAvatar } from "@/components/ui/profile-avatar";
 import { toast } from "sonner";
 import { 
   User, Bell, Palette, Globe, Smartphone, Shield, 
-  Upload, Save 
+  Save 
 } from "lucide-react";
 
 export default function SettingsPage() {
@@ -61,55 +61,6 @@ export default function SettingsPage() {
     }
   };
 
-  const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file || !profile) return;
-
-    setLoading(true);
-    try {
-      const fileExt = file.name.split('.').pop();
-      const fileName = `avatars/${profile.auth_id}/${Date.now()}.${fileExt}`;
-
-      // Check if bucket exists, create if not
-      const { data: buckets } = await supabase.storage.listBuckets();
-      const bucketExists = buckets?.some(bucket => bucket.name === 'avatars');
-      
-      if (!bucketExists) {
-        await supabase.storage.createBucket('avatars', {
-          public: true,
-          allowedMimeTypes: ['image/*'],
-          fileSizeLimit: 5 * 1024 * 1024 // 5MB
-        });
-      }
-
-      const { error: uploadError } = await supabase.storage
-        .from('avatars')
-        .upload(fileName, file, { upsert: true });
-
-      if (uploadError) throw uploadError;
-
-      const { data: { publicUrl } } = supabase.storage
-        .from('avatars')
-        .getPublicUrl(fileName);
-
-      setFormData({ ...formData, avatar_url: publicUrl });
-      
-      toast({
-        title: "Success",
-        description: "Profile picture uploaded successfully!",
-      });
-    } catch (error) {
-      console.error("Avatar upload error:", error);
-      toast({
-        title: "Upload failed",
-        description: `Failed to upload profile picture: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
   return (
     <AppLayout>
       <div className="space-y-4 sm:space-y-6 px-4 sm:px-0">
@@ -135,26 +86,6 @@ export default function SettingsPage() {
                 size="lg"
                 className="mx-auto sm:mx-0"
               />
-              <div className="text-center sm:text-left">
-                <Label htmlFor="avatar-upload" className="cursor-pointer">
-                  <Button variant="outline" size="sm" asChild>
-                    <span>
-                      <Upload className="h-4 w-4 mr-2" />
-                      Upload Photo
-                    </span>
-                  </Button>
-                </Label>
-                <input
-                  id="avatar-upload"
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={handleAvatarUpload}
-                />
-                <p className="text-xs sm:text-sm text-muted-foreground mt-1">
-                  JPG, PNG or GIF. Max size 2MB.
-                </p>
-              </div>
             </div>
 
             <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
@@ -172,6 +103,7 @@ export default function SettingsPage() {
                   id="email"
                   type="email"
                   value={formData.email}
+                  disabled
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 />
               </div>
@@ -341,9 +273,6 @@ export default function SettingsPage() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3 sm:space-y-4">
-            <Button variant="outline" className="w-full">
-              Change Password
-            </Button>
             <Button variant="outline" className="w-full">
               Two-Factor Authentication
             </Button>
