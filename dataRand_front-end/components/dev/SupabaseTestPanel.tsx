@@ -5,10 +5,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { SupabaseDebugger } from "@/lib/supabase-debug";
+import { setupSampleData } from "@/lib/setup-data";
 
 export function SupabaseTestPanel() {
   const [results, setResults] = useState<any>(null);
   const [loading, setLoading] = useState(false);
+  const [setupLoading, setSetupLoading] = useState(false);
 
   const runTest = async () => {
     setLoading(true);
@@ -25,6 +27,23 @@ export function SupabaseTestPanel() {
     }
   };
 
+  const initializeSampleData = async () => {
+    setSetupLoading(true);
+    try {
+      const result = await setupSampleData();
+      if (result.success) {
+        setResults({ ...results, sampleDataSetup: "✓ Sample data initialized successfully" });
+      } else {
+        setResults({ ...results, sampleDataSetup: `✗ Setup failed: ${result.error}` });
+      }
+    } catch (error) {
+      console.error("Sample data setup failed:", error);
+      setResults({ ...results, sampleDataSetup: `✗ Setup failed: ${error}` });
+    } finally {
+      setSetupLoading(false);
+    }
+  };
+
   const getStatusBadge = (status: boolean) => (
     <Badge variant={status ? "default" : "destructive"}>
       {status ? "✓ Pass" : "✗ Fail"}
@@ -36,9 +55,14 @@ export function SupabaseTestPanel() {
       <CardHeader>
         <CardTitle className="flex items-center justify-between">
           Supabase Configuration Test
-          <Button onClick={runTest} disabled={loading}>
-            {loading ? "Testing..." : "Run Test"}
-          </Button>
+          <div className="flex gap-2">
+            <Button onClick={initializeSampleData} disabled={setupLoading} variant="outline">
+              {setupLoading ? "Setting up..." : "Setup Sample Data"}
+            </Button>
+            <Button onClick={runTest} disabled={loading}>
+              {loading ? "Testing..." : "Run Test"}
+            </Button>
+          </div>
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -60,6 +84,15 @@ export function SupabaseTestPanel() {
               <span>Task Types Table Access</span>
               {getStatusBadge(results.taskTypesTable)}
             </div>
+            
+            {results.sampleDataSetup && (
+              <div className="flex items-center justify-between">
+                <span>Sample Data Setup</span>
+                <Badge variant={results.sampleDataSetup.startsWith('✓') ? "default" : "destructive"}>
+                  {results.sampleDataSetup}
+                </Badge>
+              </div>
+            )}
             
             {results.error && (
               <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-md">

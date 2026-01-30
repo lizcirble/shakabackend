@@ -1,43 +1,36 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { useAuth } from "@/hooks/useAuth";
+import { useWalletBalance } from "@/hooks/useWalletBalance";
+import { useComputeDevices } from "@/hooks/useComputeDevices";
 import { supabase } from "@/lib/supabase";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { ComputeIcon, EducationIcon, EarningsIcon, GlobalSouthIcon, TrendingIcon } from "@/components/icons/DataRandIcons";
-import { ChevronDown, Heart } from "lucide-react";
+import { ComputeIcon, EducationIcon, EarningsIcon, GlobalSouthIcon, TrendingIcon, WalletIcon } from "@/components/icons/DataRandIcons";
+import { ChevronDown, Heart, RefreshCw } from "lucide-react";
 import { GeometricBackground, NdebeleBorder, CornerAccent } from "@/components/ui/GeometricBackground";
 import { DeviceToggleCard } from "@/components/compute/DeviceToggleCard";
+import { Button } from "@/components/ui/button";
 
 const COST_PER_CHILD = 13;
 const OUT_OF_SCHOOL_CHILDREN = 98000000;
 
 export default function ComputeShare() {
   const { profile, loading: authLoading } = useAuth();
+  const { balance, symbol, isLoading: balanceLoading, refetch: refetchBalance } = useWalletBalance();
+  const { phoneState, laptopState, loading: devicesLoading, toggling, toggleDevice } = useComputeDevices();
   const router = useRouter();
   const { toast } = useToast();
-  
-  // Device-specific states
-  const [phoneActive, setPhoneActive] = useState(false);
-  const [laptopActive, setLaptopActive] = useState(false);
-  const [phoneSessionId, setPhoneSessionId] = useState<string | null>(null);
-  const [laptopSessionId, setLaptopSessionId] = useState<string | null>(null);
-  const [phoneInstalled, setPhoneInstalled] = useState(false);
-  const [laptopInstalled, setLaptopInstalled] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [toggling, setToggling] = useState<'phone' | 'laptop' | null>(null);
   
   const [stats, setStats] = useState({
     totalEarned: 0,
     sessionEarned: 0,
-    phoneMinutes: 0,
-    laptopMinutes: 0,
     educationContribution: 0
   });
   
@@ -52,11 +45,6 @@ export default function ComputeShare() {
     const stored = localStorage.getItem('computeShare_howItWorksViewed');
     setHowItWorksOpen(stored !== 'true');
   }, []);
-  
-  const phoneIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  const laptopIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  const phoneStartRef = useRef<Date | null>(null);
-  const laptopStartRef = useRef<Date | null>(null);
 
   useEffect(() => {
     if (!authLoading && !profile) {
@@ -69,12 +57,11 @@ export default function ComputeShare() {
     if (!profile) return;
     
     const fetchStats = async () => {
-      setLoading(true);
       try {
-        // Fetch user's profile with device columns
+        // Fetch user's compute earnings
         const { data: profileData } = await supabase
           .from("profiles")
-          .select("compute_earnings, phone_compute_enabled, laptop_compute_enabled, phone_app_installed, laptop_software_installed")
+          .select("compute_earnings")
           .eq("id", profile.id)
           .maybeSingle();
           
@@ -83,18 +70,6 @@ export default function ComputeShare() {
             ...prev,
             totalEarned: Number(profileData.compute_earnings) || 0
           }));
-          setPhoneInstalled(profileData.phone_app_installed || false);
-          // Auto-detect desktop browser and mark as installed
-          const isDesktop = !/Mobi|Android/i.test(navigator.userAgent);
-          setLaptopInstalled(profileData.laptop_software_installed || isDesktop);
-          
-          // If desktop browser, update DB
-          if (isDesktop && !profileData.laptop_software_installed) {
-            await supabase
-              .from("profiles")
-              .update({ laptop_software_installed: true })
-              .eq("id", profile.id);
-          }
         }
 
         // Fetch global education stats
@@ -110,92 +85,18 @@ export default function ComputeShare() {
             childrenEnrolled: eduStats.children_enrolled || 0
           });
         }
-
-        // Check for active phone session
-        const { data: phoneSession } = await supabase
-          .from("compute_sessions")
-          .select("*")
-          .eq("worker_id", profile.id)
-          .eq("device_type", "mobile")
-          .eq("is_active", true)
-          .maybeSingle();
-          
-        if (phoneSession) {
-          setPhoneSessionId(phoneSession.id);
-          phoneStartRef.current = new Date(phoneSession.started_at);
-          setPhoneActive(true);
-        }
-
-        // Check for active laptop session
-        const { data: laptopSession } = await supabase
-          .from("compute_sessions")
-          .select("*")
-          .eq("worker_id", profile.id)
-          .eq("device_type", "desktop")
-          .eq("is_active", true)
-          .maybeSingle();
-          
-        if (laptopSession) {
-          setLaptopSessionId(laptopSession.id);
-          laptopStartRef.current = new Date(laptopSession.started_at);
-          setLaptopActive(true);
-        }
       } catch (err) {
         console.error("Error fetching stats:", err);
-      } finally {
-        setLoading(false);
       }
     };
     
     fetchStats();
   }, [profile]);
 
-  // Phone earnings timer
+  // Calculate session earnings from active devices
   useEffect(() => {
-    if (phoneActive && phoneStartRef.current) {
-      phoneIntervalRef.current = setInterval(() => {
-        const now = new Date();
-        const minutes = (now.getTime() - phoneStartRef.current!.getTime()) / 60000;
-        setStats(prev => ({
-          ...prev,
-          phoneMinutes: Math.floor(minutes)
-        }));
-      }, 1000);
-    } else {
-      if (phoneIntervalRef.current) {
-        clearInterval(phoneIntervalRef.current);
-      }
-    }
-    return () => {
-      if (phoneIntervalRef.current) clearInterval(phoneIntervalRef.current);
-    };
-  }, [phoneActive]);
-
-  // Laptop earnings timer
-  useEffect(() => {
-    if (laptopActive && laptopStartRef.current) {
-      laptopIntervalRef.current = setInterval(() => {
-        const now = new Date();
-        const minutes = (now.getTime() - laptopStartRef.current!.getTime()) / 60000;
-        setStats(prev => ({
-          ...prev,
-          laptopMinutes: Math.floor(minutes)
-        }));
-      }, 1000);
-    } else {
-      if (laptopIntervalRef.current) {
-        clearInterval(laptopIntervalRef.current);
-      }
-    }
-    return () => {
-      if (laptopIntervalRef.current) clearInterval(laptopIntervalRef.current);
-    };
-  }, [laptopActive]);
-
-  // Calculate combined session earnings
-  useEffect(() => {
-    const phoneEarnings = phoneActive ? stats.phoneMinutes * 0.001 : 0;
-    const laptopEarnings = laptopActive ? stats.laptopMinutes * 0.001 : 0;
+    const phoneEarnings = phoneState.isActive ? phoneState.sessionMinutes * 0.001 : 0;
+    const laptopEarnings = laptopState.isActive ? laptopState.sessionMinutes * 0.001 : 0;
     const totalSession = phoneEarnings + laptopEarnings;
     
     setStats(prev => ({
@@ -203,124 +104,25 @@ export default function ComputeShare() {
       sessionEarned: totalSession,
       educationContribution: totalSession * 0.15
     }));
-  }, [phoneActive, laptopActive, stats.phoneMinutes, stats.laptopMinutes]);
+  }, [phoneState.isActive, phoneState.sessionMinutes, laptopState.isActive, laptopState.sessionMinutes]);
 
   const handleToggleDevice = async (device: 'phone' | 'laptop') => {
-    if (!profile) return;
+    await toggleDevice(device);
     
-    const isPhone = device === 'phone';
-    const isActive = isPhone ? phoneActive : laptopActive;
-    const sessionId = isPhone ? phoneSessionId : laptopSessionId;
-    const deviceType = isPhone ? 'mobile' : 'desktop';
-    const minutes = isPhone ? stats.phoneMinutes : stats.laptopMinutes;
-    
-    setToggling(device);
-    
-    try {
-      if (!isActive) {
-        // Start session
-        const { data: session, error } = await supabase
-          .from("compute_sessions")
-          .insert({
-            worker_id: profile.id,
-            device_type: deviceType,
-            is_active: true
-          })
-          .select()
-          .single();
-          
-        if (error) throw error;
+    // Refresh stats after toggle
+    if (profile) {
+      const { data: profileData } = await supabase
+        .from("profiles")
+        .select("compute_earnings")
+        .eq("id", profile.id)
+        .maybeSingle();
         
-        if (isPhone) {
-          setPhoneSessionId(session.id);
-          phoneStartRef.current = new Date();
-          setPhoneActive(true);
-          await supabase.from("profiles").update({ phone_compute_enabled: true }).eq("id", profile.id);
-        } else {
-          setLaptopSessionId(session.id);
-          laptopStartRef.current = new Date();
-          setLaptopActive(true);
-          await supabase.from("profiles").update({ laptop_compute_enabled: true }).eq("id", profile.id);
-        }
-        
-        toast({
-          title: `${isPhone ? 'Phone' : 'Laptop'} Compute Started! 🚀`,
-          description: "You're now earning from your idle resources. 15% goes to education."
-        });
-      } else {
-        // End session
-        if (sessionId) {
-          const sessionEarnings = minutes * 0.001;
-          const eduAmount = sessionEarnings * 0.15;
-          const workerAmount = sessionEarnings * 0.85;
-          
-          await supabase
-            .from("compute_sessions")
-            .update({
-              is_active: false,
-              ended_at: new Date().toISOString(),
-              total_earned: sessionEarnings
-            })
-            .eq("id", sessionId);
-
-          if (workerAmount > 0) {
-            await supabase.from("transactions").insert({
-              profile_id: profile.id,
-              amount: workerAmount,
-              type: "earning",
-              status: "completed",
-              description: `ComputeShare ${isPhone ? 'phone' : 'laptop'} earnings (${minutes} min)`
-            });
-
-            await supabase.from("transactions").insert({
-              profile_id: profile.id,
-              amount: eduAmount,
-              type: "education_fund",
-              status: "completed",
-              description: `ComputeShare education contribution (15%)`
-            });
-          }
-
-          const newTotal = stats.totalEarned + workerAmount;
-          await supabase
-            .from("profiles")
-            .update({
-              compute_earnings: newTotal,
-              ...(isPhone ? { phone_compute_enabled: false } : { laptop_compute_enabled: false })
-            })
-            .eq("id", profile.id);
-            
-          setStats(prev => ({
-            ...prev,
-            totalEarned: newTotal,
-            ...(isPhone ? { phoneMinutes: 0 } : { laptopMinutes: 0 })
-          }));
-          
-          toast({
-            title: `${isPhone ? 'Phone' : 'Laptop'} Compute Stopped`,
-            description: `You earned $${sessionEarnings.toFixed(4)} this session.`
-          });
-        }
-        
-        if (isPhone) {
-          setPhoneSessionId(null);
-          phoneStartRef.current = null;
-          setPhoneActive(false);
-        } else {
-          setLaptopSessionId(null);
-          laptopStartRef.current = null;
-          setLaptopActive(false);
-        }
+      if (profileData) {
+        setStats(prev => ({
+          ...prev,
+          totalEarned: Number(profileData.compute_earnings) || 0
+        }));
       }
-    } catch (err) {
-      console.error("Error toggling compute:", err);
-      toast({
-        title: "Error",
-        description: "Failed to toggle compute sharing. Please try again.",
-        variant: "destructive"
-      });
-    } finally {
-      setToggling(null);
     }
   };
 
@@ -334,7 +136,7 @@ export default function ComputeShare() {
   const childrenRemaining = OUT_OF_SCHOOL_CHILDREN - globalStats.childrenEnrolled;
   const progressPercent = (globalStats.childrenEnrolled / OUT_OF_SCHOOL_CHILDREN) * 100;
   
-  if (authLoading) return null;
+  if (authLoading || devicesLoading) return null;
   
   return (
     <AppLayout>
@@ -405,7 +207,7 @@ export default function ComputeShare() {
         </Collapsible>
 
         {/* Earnings Stats */}
-        <div className="grid gap-4 md:grid-cols-3">
+        <div className="grid gap-4 md:grid-cols-4">
           <Card className="border-border/50 bg-gradient-to-br from-primary/10 to-transparent">
             <CardHeader className="pb-2">
               <CardDescription className="flex items-center gap-2">
@@ -440,6 +242,32 @@ export default function ComputeShare() {
             </CardContent>
           </Card>
 
+          <Card className="border-border/50 bg-gradient-to-br from-blue-500/10 to-transparent">
+            <CardHeader className="pb-2">
+              <CardDescription className="flex items-center gap-2">
+                <WalletIcon size={16} />
+                Wallet Balance
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => refetchBalance()}
+                  disabled={balanceLoading}
+                  className="h-6 w-6 p-0 ml-auto"
+                >
+                  <RefreshCw className={`h-3 w-3 ${balanceLoading ? 'animate-spin' : ''}`} />
+                </Button>
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p className="text-3xl font-display font-bold text-blue-500">
+                {parseFloat(balance).toFixed(4)} {symbol}
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Arbitrum Sepolia
+              </p>
+            </CardContent>
+          </Card>
+
           <Card className="border-border/50 bg-gradient-to-br from-secondary/10 to-transparent">
             <CardHeader className="pb-2">
               <CardDescription className="flex items-center gap-2">
@@ -470,19 +298,21 @@ export default function ComputeShare() {
           <CardContent className="grid gap-4 md:grid-cols-2">
             <DeviceToggleCard
               deviceType="phone"
-              isEnabled={phoneActive}
-              isInstalled={phoneInstalled}
+              isEnabled={phoneState.isActive}
+              isInstalled={phoneState.isInstalled}
               onToggle={() => handleToggleDevice('phone')}
               isLoading={toggling === 'phone'}
-              sessionMinutes={stats.phoneMinutes}
+              sessionMinutes={phoneState.sessionMinutes}
+              demandStatus={phoneState.demandStatus}
             />
             <DeviceToggleCard
               deviceType="laptop"
-              isEnabled={laptopActive}
-              isInstalled={laptopInstalled}
+              isEnabled={laptopState.isActive}
+              isInstalled={laptopState.isInstalled}
               onToggle={() => handleToggleDevice('laptop')}
               isLoading={toggling === 'laptop'}
-              sessionMinutes={stats.laptopMinutes}
+              sessionMinutes={laptopState.sessionMinutes}
+              demandStatus={laptopState.demandStatus}
             />
           </CardContent>
         </Card>

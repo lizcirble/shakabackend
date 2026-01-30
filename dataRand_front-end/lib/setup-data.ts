@@ -57,6 +57,35 @@ export async function setupSampleData() {
       return { success: false, error: tasksError.message };
     }
 
+    // Insert education fund stats
+    const { error: eduStatsError } = await supabase
+      .from("education_fund_stats")
+      .upsert([
+        {
+          region: "global",
+          total_raised: 125000.75,
+          children_enrolled: 9615,
+          last_updated: new Date().toISOString()
+        },
+        {
+          region: "africa",
+          total_raised: 87500.50,
+          children_enrolled: 6730,
+          last_updated: new Date().toISOString()
+        },
+        {
+          region: "india",
+          total_raised: 37500.25,
+          children_enrolled: 2885,
+          last_updated: new Date().toISOString()
+        }
+      ]);
+
+    if (eduStatsError) {
+      console.error("Error inserting education stats:", eduStatsError);
+      return { success: false, error: eduStatsError.message };
+    }
+
     console.log("Sample data setup complete!");
     return { success: true };
 
