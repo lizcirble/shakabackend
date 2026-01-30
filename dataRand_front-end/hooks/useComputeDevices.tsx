@@ -145,8 +145,8 @@ export function useComputeDevices() {
     setToggling(device);
     
     try {
-      // Add delay for futuristic loading effect
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Add delay for futuristic loading effect (longer animation)
+      await new Promise(resolve => setTimeout(resolve, 4000));
       
       if (!currentState.isActive) {
         // Simulate Start session

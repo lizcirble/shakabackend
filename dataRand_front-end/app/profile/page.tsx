@@ -7,13 +7,16 @@ import { useLocalTasks } from "@/hooks/useLocalTasks";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ProfileAvatar } from "@/components/ui/profile-avatar";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { BarChart, DollarSign, CheckCircle, Star, Zap, Activity, Cpu, FileText } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 function ProfilePageContent() {
   const { profile } = useAuth();
   const { getTasksByClientId } = useLocalTasks();
+  const router = useRouter();
   const [cpuUsage, setCpuUsage] = useState(0);
 
   const userTasks = profile ? getTasksByClientId(profile.id) : [];
@@ -100,9 +103,18 @@ function ProfilePageContent() {
                         ${task.payout_amount} • {task.estimated_time_minutes} min • {task.worker_count} workers
                       </p>
                     </div>
-                    <Badge variant={task.status === 'available' ? 'default' : 'secondary'} className="text-xs">
-                      {task.status}
-                    </Badge>
+                    <div className="flex items-center gap-2">
+                      <Badge variant={task.status === 'available' ? 'default' : 'secondary'} className="text-xs">
+                        {task.status}
+                      </Badge>
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={() => router.push(`/client/tasks/${task.id}`)}
+                      >
+                        View
+                      </Button>
+                    </div>
                   </div>
                 ))}
                 {userTasks.length > 5 && (

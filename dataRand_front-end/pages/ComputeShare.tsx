@@ -7,6 +7,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useComputeDevices } from "@/hooks/useComputeDevices";
 import { supabase } from "@/lib/supabase";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -142,12 +143,17 @@ export default function ComputeShare() {
         {/* Header */}
         <div className="relative">
           <CornerAccent position="top-left" />
-          <div className="flex items-center gap-3">
-            <ComputeIcon size={32} className="text-primary" />
-            <div>
-              <h1 className="text-2xl font-display font-bold">ComputeShare</h1>
-              <p className="text-muted-foreground">Make money from your idle computer or phone</p>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <ComputeIcon size={32} className="text-primary" />
+              <div>
+                <h1 className="text-2xl font-display font-bold">ComputeShare</h1>
+                <p className="text-muted-foreground">Make money from your idle computer or phone</p>
+              </div>
             </div>
+            <Button variant="outline" onClick={() => router.push('/compute/history')}>
+              View History
+            </Button>
           </div>
         </div>
 

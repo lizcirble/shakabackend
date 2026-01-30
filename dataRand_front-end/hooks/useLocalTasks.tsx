@@ -33,6 +33,10 @@ export function useLocalTasks() {
     return tasks.filter(task => task.client_id === clientId);
   };
 
+  const getTaskById = (taskId: string): LocalTask | null => {
+    return tasks.find(task => task.id === taskId) || null;
+  };
+
   useEffect(() => {
     loadTasks();
     
@@ -48,6 +52,7 @@ export function useLocalTasks() {
   return {
     tasks,
     getTasksByClientId,
+    getTaskById,
     refreshTasks: loadTasks
   };
 }
