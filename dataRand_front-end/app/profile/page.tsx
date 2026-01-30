@@ -1,3 +1,11 @@
+"use client"
+
+import { AppLayout } from "@/components/layout/AppLayout";
+import withAuth from "@/components/withAuth";
+import { useAuth } from "@/hooks/useAuth";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ProfileAvatar } from "@/components/ui/profile-avatar";
+import { Badge } from "@/components/ui/badge";
 import { BarChart, DollarSign, CheckCircle, Star, Zap, Activity, Cpu } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { useState, useEffect } from "react";
