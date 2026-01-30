@@ -4,26 +4,22 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { useAuth } from "@/hooks/useAuth";
-import { useWalletBalance } from "@/hooks/useWalletBalance";
 import { useComputeDevices } from "@/hooks/useComputeDevices";
 import { supabase } from "@/lib/supabase";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { ComputeIcon, EducationIcon, EarningsIcon, GlobalSouthIcon, TrendingIcon, WalletIcon } from "@/components/icons/DataRandIcons";
-import { ChevronDown, Heart, RefreshCw } from "lucide-react";
+import { ComputeIcon, EducationIcon, EarningsIcon, GlobalSouthIcon, TrendingIcon } from "@/components/icons/DataRandIcons";
+import { ChevronDown, Heart } from "lucide-react";
 import { GeometricBackground, NdebeleBorder, CornerAccent } from "@/components/ui/GeometricBackground";
 import { DeviceToggleCard } from "@/components/compute/DeviceToggleCard";
-import { Button } from "@/components/ui/button";
 
 const COST_PER_CHILD = 13;
 const OUT_OF_SCHOOL_CHILDREN = 98000000;
 
 export default function ComputeShare() {
   const { profile, loading: authLoading } = useAuth();
-  const { balance, symbol, isLoading: balanceLoading, refetch: refetchBalance } = useWalletBalance();
   const { phoneState, laptopState, loading: devicesLoading, toggling, toggleDevice } = useComputeDevices();
   const router = useRouter();
   const { toast } = useToast();
@@ -207,7 +203,7 @@ export default function ComputeShare() {
         </Collapsible>
 
         {/* Earnings Stats */}
-        <div className="grid gap-4 md:grid-cols-4">
+        <div className="grid gap-4 md:grid-cols-3">
           <Card className="border-border/50 bg-gradient-to-br from-primary/10 to-transparent">
             <CardHeader className="pb-2">
               <CardDescription className="flex items-center gap-2">
@@ -238,32 +234,6 @@ export default function ComputeShare() {
               </p>
               <p className="text-xs text-muted-foreground mt-1">
                 Lifetime compute earnings
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="border-border/50 bg-gradient-to-br from-blue-500/10 to-transparent">
-            <CardHeader className="pb-2">
-              <CardDescription className="flex items-center gap-2">
-                <WalletIcon size={16} />
-                Wallet Balance
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => refetchBalance()}
-                  disabled={balanceLoading}
-                  className="h-6 w-6 p-0 ml-auto"
-                >
-                  <RefreshCw className={`h-3 w-3 ${balanceLoading ? 'animate-spin' : ''}`} />
-                </Button>
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="text-3xl font-display font-bold text-blue-500">
-                {parseFloat(balance).toFixed(4)} {symbol}
-              </p>
-              <p className="text-xs text-muted-foreground mt-1">
-                Arbitrum Sepolia
               </p>
             </CardContent>
           </Card>
