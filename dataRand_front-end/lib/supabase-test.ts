@@ -4,9 +4,9 @@ export async function testSupabaseConnection() {
   try {
     console.log("Testing Supabase connection...");
     
-    // Test basic connection
+    // Test basic connection with task_types table
     const { data, error } = await supabase
-      .from("profiles")
+      .from("task_types")
       .select("count")
       .limit(1);
     

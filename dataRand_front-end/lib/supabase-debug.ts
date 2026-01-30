@@ -40,8 +40,9 @@ export class SupabaseDebugger {
     this.log("=== CONNECTION TEST ===");
     
     try {
+      // Test with a simple query that doesn't require auth
       const { data, error } = await supabase
-        .from("profiles")
+        .from("task_types")
         .select("count")
         .limit(1);
       
