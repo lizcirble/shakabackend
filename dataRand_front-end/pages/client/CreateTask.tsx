@@ -151,7 +151,10 @@ export default function CreateTask() {
           allowedMimeTypes: ['image/*', 'video/*'],
           fileSizeLimit: 50 * 1024 * 1024 // 50MB
         });
-        if (createError) console.warn("Bucket creation failed:", createError);
+        if (createError) {
+          console.error("Bucket creation failed:", createError);
+          throw new Error(`Failed to create storage bucket: ${createError.message}`);
+        }
       }
 
       const { error: uploadError } = await supabase.storage
@@ -172,9 +175,15 @@ export default function CreateTask() {
       return { url: publicUrl, type: mediaType };
     } catch (err) {
       console.error("Upload error:", err);
+      let errorMessage = "Unknown error";
+      if (err instanceof Error) {
+        errorMessage = err.message;
+      } else if (typeof err === 'object' && err !== null && 'message' in err) {
+        errorMessage = (err as { message: string }).message;
+      }
       toast({
         title: "Upload failed", 
-        description: `Failed to upload media: ${err instanceof Error ? err.message : 'Unknown error'}. Please try again.`,
+        description: `Failed to upload media: ${errorMessage}. Please try again.`,
         variant: "destructive",
       });
       return null;

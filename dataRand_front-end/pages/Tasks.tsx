@@ -216,16 +216,21 @@ useEffect(() => {
       if (assignError) {
         SupabaseDebugger.error("Assignment creation failed:", assignError);
         
+        let userMessage = "Failed to accept task. Please try again.";
         if (assignError.code === "23505") {
-          toast({
-            title: "Already Accepted",
-            description: "You've already accepted this task.",
-            variant: "destructive",
-          });
+          userMessage = "You've already accepted this task.";
+        } else if (assignError.message.includes("violates foreign key constraint")) {
+          userMessage = "Task or worker not found. Please refresh and try again.";
         } else {
-          throw assignError;
+          userMessage = assignError.message; // Use Supabase error message if available
         }
-        return;
+
+        toast({
+          title: "Failed to Accept Challenge",
+          description: userMessage,
+          variant: "destructive",
+        });
+        return; // Stop execution if assignment fails
       }
 
       SupabaseDebugger.log("Assignment created successfully ✓");
@@ -239,7 +244,15 @@ useEffect(() => {
 
       if (updateError) {
         SupabaseDebugger.error("Task status update failed:", updateError);
-        throw updateError;
+        // Even if task status update fails, the assignment was created.
+        // We might want to log this for admin but still tell user it was accepted.
+        // For now, we'll treat it as a failure to accept.
+        toast({
+          title: "Challenge Accepted (with issues)",
+          description: "Task accepted, but there was an issue updating its status. Please check 'My Work'.",
+          variant: "destructive",
+        });
+        return;
       }
 
       SupabaseDebugger.log("Task status updated successfully ✓");
@@ -253,11 +266,11 @@ useEffect(() => {
     } catch (err) {
       SupabaseDebugger.error("Task acceptance failed:", err);
       
-      const errorMessage = err instanceof Error ? err.message : "Unknown error";
+      const errorMessage = err instanceof Error ? err.message : String(err); // Convert any error to string
       
       toast({
         title: "Error",
-        description: `Failed to accept task: ${errorMessage}. Check console for details.`,
+        description: `Failed to accept task: ${errorMessage}.`,
         variant: "destructive",
       });
     }
