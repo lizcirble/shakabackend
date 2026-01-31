@@ -4,6 +4,7 @@ import { PrivyProvider } from "@privy-io/react-auth";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { WagmiProvider } from "@privy-io/wagmi";
 import { SmartWalletsProvider } from "@privy-io/react-auth/smart-wallets";
+import { TooltipProvider } from "@/components/ui/tooltip";
 
 import { privyConfig } from "./privyConfig";
 import { wagmiConfig } from "./wagmiConfig";
@@ -25,7 +26,9 @@ export default function Provider({ children }: { children: React.ReactNode }) {
       <QueryClientProvider client={queryClient}>
         <SmartWalletsProvider>
           <WagmiProvider config={wagmiConfig}>
-            {children}
+            <TooltipProvider>
+              {children}
+            </TooltipProvider>
           </WagmiProvider>
         </SmartWalletsProvider>
       </QueryClientProvider>

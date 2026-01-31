@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Loader2, Image, Headphones, Brain, Plus, DollarSign, Users, Globe, Upload, X, Video } from "lucide-react";
+import { ArrowLeft, Loader2, Image, Headphones, Brain, Plus, DollarSign, Users, Globe, Upload, X, Video, Info, FileText, Clock } from "lucide-react";
 import { z } from "zod";
 
 const AFRICAN_COUNTRIES = [
@@ -281,11 +281,12 @@ export default function CreateTask() {
   return (
     <AppLayout>
       <div className="max-w-2xl mx-auto space-y-4 sm:space-y-6 animate-in fade-in duration-300 px-4 sm:px-0">
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => router.back()}>
-            <ArrowLeft className="h-5 w-5" />
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+          <Button variant="ghost" size="sm" onClick={() => router.back()} className="self-start">
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back
           </Button>
-          <div>
+          <div className="min-w-0 flex-1">
             <h1 className="text-xl sm:text-2xl font-display font-bold">Create New Task</h1>
             <p className="text-muted-foreground text-sm sm:text-base">
               Post a task for workers to complete
@@ -554,27 +555,73 @@ export default function CreateTask() {
                 </div>
               </div>
 
-              {/* Cost Summary */}
-              {formData.payout_amount && formData.worker_count && (
-                <div className="p-4 rounded-lg bg-primary/10 border border-primary/20">
-                  <p className="text-sm font-medium">
-                    Total Cost: <span className="text-primary font-bold">
-                      ${(parseFloat(formData.payout_amount || "0") * parseInt(formData.worker_count || "1")).toFixed(2)}
-                    </span>
-                    <span className="text-muted-foreground ml-2">
-                      (${formData.payout_amount} × {formData.worker_count} workers)
-                    </span>
-                  </p>
-                </div>
-              )}
+              {/* Review Section */}
+              <Card className="bg-muted/30">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Info className="h-5 w-5" />
+                    Review Your Task
+                  </CardTitle>
+                  <CardDescription>
+                    Please review the details below before creating the task.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-2 p-3 rounded-lg border">
+                    <div className="flex justify-between items-center">
+                      <p className="text-sm font-medium flex items-center gap-2">
+                        <FileText className="h-4 w-4 text-muted-foreground" />
+                        Payout per worker
+                      </p>
+                      <p className="text-sm font-bold">
+                        ${parseFloat(formData.payout_amount || "0").toFixed(2)}
+                      </p>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <p className="text-sm font-medium flex items-center gap-2">
+                        <Users className="h-4 w-4 text-muted-foreground" />
+                        Number of workers
+                      </p>
+                      <p className="text-sm font-bold">
+                        {parseInt(formData.worker_count || "1")}
+                      </p>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <p className="text-sm font-medium flex items-center gap-2">
+                        <Clock className="h-4 w-4 text-muted-foreground" />
+                        Estimated time per task
+                      </p>
+                      <p className="text-sm font-bold">
+                        {formData.estimated_time_minutes} minutes
+                      </p>
+                    </div>
+                  </div>
 
-              {/* Platform Fee Notice */}
-              <div className="p-4 rounded-lg bg-muted/50 border border-border">
-                <p className="text-sm text-muted-foreground">
-                  <strong>15% Platform Fee:</strong> A service fee applies to task payouts
-                  to support platform operations. Workers receive 85% of the payout amount.
-                </p>
-              </div>
+                  <div className="space-y-2 p-3 rounded-lg border">
+                     <div className="flex justify-between items-center text-sm">
+                        <p className="text-muted-foreground">Subtotal</p>
+                        <p className="text-muted-foreground">
+                          ${(parseFloat(formData.payout_amount || "0") * parseInt(formData.worker_count || "1")).toFixed(2)}
+                        </p>
+                      </div>
+                      <div className="flex justify-between items-center text-sm">
+                        <p className="text-muted-foreground">Platform Fee (15%)</p>
+                        <p className="text-muted-foreground">
+                          ${((parseFloat(formData.payout_amount || "0") * parseInt(formData.worker_count || "1")) * 0.15).toFixed(2)}
+                        </p>
+                      </div>
+                      <div className="flex justify-between items-center font-bold text-base">
+                        <p>Total Cost</p>
+                        <p>
+                          ${((parseFloat(formData.payout_amount || "0") * parseInt(formData.worker_count || "1")) * 1.15).toFixed(2)}
+                        </p>
+                      </div>
+                  </div>
+                  <p className="text-xs text-muted-foreground px-3">
+                    The platform fee supports our operations and ensures we can connect you with quality workers. Workers receive 100% of the payout amount shown per worker.
+                  </p>
+                </CardContent>
+              </Card>
 
               <div className="flex flex-col sm:flex-row gap-3 pt-4">
                 <Button

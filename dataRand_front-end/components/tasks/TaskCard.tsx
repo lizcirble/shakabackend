@@ -1,7 +1,9 @@
 import { Task } from "@/lib/supabase";
+import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { formatDistanceToNow } from "date-fns";
 import {
   ClockIcon,
@@ -32,9 +34,24 @@ type TaskCardProps = {
 };
 
 export function TaskCard({ task, onAccept, showAccept = true }: TaskCardProps) {
+  const { profile } = useAuth();
+  const isOwnTask = profile?.id === task.client_id;
+
   const taskTypeName = task.task_type?.name || "unknown";
   const Icon = taskTypeIcons[taskTypeName] || AIIcon;
   const colorClass = taskTypeColors[taskTypeName] || "bg-muted text-muted-foreground";
+
+  const acceptButton = (
+    <Button
+      onClick={onAccept}
+      disabled={isOwnTask}
+      className="w-full h-10 gradient-primary text-primary-foreground font-semibold group/btn hover:shadow-md transition-all duration-300 group-hover:scale-105"
+    >
+      <span className="hidden sm:inline">Accept Challenge</span>
+      <span className="sm:hidden">Accept</span>
+      <ArrowRightIcon size={16} className="ml-2 group-hover/btn:translate-x-2 transition-transform duration-300" />
+    </Button>
+  );
 
   return (
     <Card className="group relative overflow-hidden border border-border/50 bg-card hover:border-primary/50 hover:shadow-sm transition-all duration-500 h-full flex flex-col hover:scale-[1.02] hover:-translate-y-1">
@@ -109,14 +126,20 @@ export function TaskCard({ task, onAccept, showAccept = true }: TaskCardProps) {
 
       {showAccept && onAccept && (
         <CardFooter className="pt-0 p-4 sm:p-6 relative z-10">
-          <Button
-            onClick={onAccept}
-            className="w-full h-10 gradient-primary text-primary-foreground font-semibold group/btn hover:shadow-md transition-all duration-300 group-hover:scale-105"
-          >
-            <span className="hidden sm:inline">Accept Challenge</span>
-            <span className="sm:hidden">Accept</span>
-            <ArrowRightIcon size={16} className="ml-2 group-hover/btn:translate-x-2 transition-transform duration-300" />
-          </Button>
+          {isOwnTask ? (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="w-full">
+                  {acceptButton}
+                </div>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>You cannot accept a task you created.</p>
+              </TooltipContent>
+            </Tooltip>
+          ) : (
+            acceptButton
+          )}
         </CardFooter>
       )}
     </Card>
