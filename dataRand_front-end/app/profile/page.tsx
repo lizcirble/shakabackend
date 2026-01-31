@@ -4,11 +4,13 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import withAuth from "@/components/withAuth";
 import { useAuth } from "@/hooks/useAuth";
 import { useLocalTasks } from "@/hooks/useLocalTasks";
+import { useGlobalMetrics } from "@/hooks/useGlobalMetrics";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ProfileAvatar } from "@/components/ui/profile-avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { BarChart, DollarSign, CheckCircle, Star, Zap, Activity, Cpu, FileText } from "lucide-react";
+import { BarChart, DollarSign, CheckCircle, Star, Zap, Activity, Cpu, FileText, GraduationCap, Users } from "lucide-react";
+import { DailyImpactCard } from "@/components/DailyImpactCard";
 import { Progress } from "@/components/ui/progress";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
@@ -17,16 +19,18 @@ function ProfilePageContent() {
   const { profile } = useAuth();
   const { getTasksByClientId } = useLocalTasks();
   const router = useRouter();
-  const [cpuUsage, setCpuUsage] = useState(0);
+  const {
+    tasksCompletedToday,
+    dataProcessedToday,
+    earnedToday,
+    totalEarnings,
+    totalTasksCompleted,
+    currentCpuUsage,
+    educationFundContribution,
+    studentsImpacted
+  } = useGlobalMetrics();
 
   const userTasks = profile ? getTasksByClientId(profile.id) : [];
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setCpuUsage(Math.floor(Math.random() * 100));
-    }, 1000);
-    return () => clearInterval(interval);
-  }, []);
 
   return (
     <AppLayout>
@@ -59,7 +63,7 @@ function ProfilePageContent() {
               <DollarSign className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-xl sm:text-2xl font-bold">${profile?.total_earnings.toFixed(2)}</div>
+              <div className="text-xl sm:text-2xl font-bold">${totalEarnings.toFixed(2)}</div>
             </CardContent>
           </Card>
           <Card>
@@ -68,7 +72,7 @@ function ProfilePageContent() {
               <CheckCircle className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-xl sm:text-2xl font-bold">{profile?.tasks_completed}</div>
+              <div className="text-xl sm:text-2xl font-bold">{totalTasksCompleted}</div>
             </CardContent>
           </Card>
           <Card>
@@ -144,54 +148,7 @@ function ProfilePageContent() {
         </Card>
 
         {/* Daily Impact Cards */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
-              <Zap className="h-5 w-5" /> Daily Impact
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="flex flex-col items-center justify-center p-4 bg-muted/50 rounded-lg">
-              <CheckCircle className="h-6 w-6 text-green-500 mb-2" />
-              <p className="text-lg font-bold">5</p>
-              <p className="text-sm text-muted-foreground">Tasks Completed</p>
-            </div>
-            <div className="flex flex-col items-center justify-center p-4 bg-muted/50 rounded-lg">
-              <Activity className="h-6 w-6 text-blue-500 mb-2" />
-              <p className="text-lg font-bold">1.2 GB</p>
-              <p className="text-sm text-muted-foreground">Data Processed</p>
-            </div>
-            <div className="flex flex-col items-center justify-center p-4 bg-muted/50 rounded-lg">
-              <DollarSign className="h-6 w-6 text-yellow-500 mb-2" />
-              <p className="text-lg font-bold">$3.45</p>
-              <p className="text-sm text-muted-foreground">Earned Today</p>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Live Resource Transparency */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
-              <Activity className="h-5 w-5" /> Live Resource Transparency
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2">
-                  <Cpu className="h-5 w-5 text-muted-foreground" />
-                  <p className="text-sm font-medium">CPU Usage</p>
-                </div>
-                <p className="text-sm text-muted-foreground">{cpuUsage}%</p>
-              </div>
-              <Progress value={cpuUsage} className="h-2" />
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Real-time view of your device's contribution when compute sharing is active.
-            </p>
-          </CardContent>
-        </Card>
+        <DailyImpactCard />
 
       </div>
     </AppLayout>

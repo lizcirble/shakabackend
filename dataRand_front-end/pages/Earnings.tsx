@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { useAuth } from "@/hooks/useAuth";
+import { useGlobalMetrics } from "@/hooks/useGlobalMetrics";
 import withAuth from "@/components/withAuth";
 import { supabase, type Transaction } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
@@ -41,6 +42,7 @@ interface WithdrawalRequest {
 
 function Earnings() {
   const { profile, loading: authLoading } = useAuth();
+  const { totalEarnings, earnedToday, educationFundContribution } = useGlobalMetrics();
   const router = useRouter();
 
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -192,7 +194,7 @@ function Earnings() {
               </CardHeader>
               <CardContent>
                 <p className="text-3xl font-display font-bold text-primary">
-                  ${stats.available.toFixed(2)}
+                  ${totalEarnings.toFixed(2)}
                 </p>
                 <p className="text-xs text-muted-foreground mt-1">
                   Minimum withdrawal: $5
@@ -228,7 +230,7 @@ function Earnings() {
               </CardHeader>
               <CardContent>
                 <p className="text-3xl font-display font-bold">
-                  ${stats.lifetime.toFixed(2)}
+                  ${totalEarnings.toFixed(2)}
                 </p>
               </CardContent>
             </Card>
@@ -242,7 +244,7 @@ function Earnings() {
               </CardHeader>
               <CardContent>
                 <p className="text-3xl font-display font-bold text-secondary">
-                  ${stats.educationFund.toFixed(2)}
+                  ${educationFundContribution.toFixed(2)}
                 </p>
                 <p className="text-xs text-muted-foreground mt-1">
                   15% of ComputeShare earnings fund education

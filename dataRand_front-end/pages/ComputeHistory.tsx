@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { useAuth } from "@/hooks/useAuth";
+import { useGlobalMetrics } from "@/hooks/useGlobalMetrics";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -23,8 +24,8 @@ interface ComputeSession {
 export default function ComputeHistory() {
   const { profile } = useAuth();
   const router = useRouter();
+  const { totalEarnings, totalComputeSessions, totalComputeMinutes } = useGlobalMetrics();
   const [sessions, setSessions] = useState<ComputeSession[]>([]);
-  const [totalEarnings, setTotalEarnings] = useState(0);
 
   useEffect(() => {
     // Simulate compute history data
@@ -62,7 +63,6 @@ export default function ComputeHistory() {
     ];
     
     setSessions(mockSessions);
-    setTotalEarnings(mockSessions.reduce((sum, session) => sum + session.earnings, 0));
   }, []);
 
   const formatDate = (date: Date) => {
@@ -112,7 +112,7 @@ export default function ComputeHistory() {
               </CardDescription>
             </CardHeader>
             <CardContent className="px-3 sm:px-6 pb-3 sm:pb-6">
-              <p className="text-lg sm:text-2xl font-bold">{sessions.length}</p>
+              <p className="text-lg sm:text-2xl font-bold">{totalComputeSessions}</p>
             </CardContent>
           </Card>
           
@@ -125,7 +125,7 @@ export default function ComputeHistory() {
             </CardHeader>
             <CardContent className="px-3 sm:px-6 pb-3 sm:pb-6">
               <p className="text-lg sm:text-2xl font-bold truncate">
-                {formatDuration(sessions.reduce((sum, session) => sum + session.duration, 0))}
+                {formatDuration(totalComputeMinutes)}
               </p>
             </CardContent>
           </Card>

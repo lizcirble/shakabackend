@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./providers";
 import Provider from "./provider";
+import { GlobalMetricsProvider } from "@/hooks/useGlobalMetrics";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -20,8 +21,9 @@ export default function RootLayout({
     <html lang="en">
       <body className={inter.className}>
         <Provider>
-        <Providers>{children}</Providers>
-
+          <GlobalMetricsProvider>
+            <Providers>{children}</Providers>
+          </GlobalMetricsProvider>
         </Provider>
       </body>
     </html>
