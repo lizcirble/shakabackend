@@ -72,3 +72,20 @@ INSERT INTO task_types (name, description, icon) VALUES
 ('Image Labeling', 'Label and categorize images', '🖼️'),
 ('Content Moderation', 'Review and moderate content', '🛡️')
 ON CONFLICT DO NOTHING;
+
+-- Create task_media bucket if it doesn't exist
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('task_media', 'task_media', true)
+ON CONFLICT (id) DO NOTHING;
+
+-- Allow public read access to the task_media bucket
+CREATE POLICY "Allow public read access to task_media"
+ON storage.objects FOR SELECT
+TO public
+USING (bucket_id = 'task_media');
+
+-- Allow authenticated users to upload to the task_media bucket
+CREATE POLICY "Allow authenticated uploads to task_media"
+ON storage.objects FOR INSERT
+TO authenticated
+WITH CHECK (bucket_id = 'task_media');
