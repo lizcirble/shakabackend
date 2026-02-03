@@ -21,9 +21,11 @@ export default function RootLayout({
     <html lang="en">
       <body className={inter.className}>
         <Provider>
-          <GlobalMetricsProvider>
-            <Providers>{children}</Providers>
-          </GlobalMetricsProvider>
+          <Providers>
+            <GlobalMetricsProvider>
+              {children}
+            </GlobalMetricsProvider>
+          </Providers>
         </Provider>
       </body>
     </html>

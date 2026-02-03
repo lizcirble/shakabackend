@@ -16,8 +16,7 @@ import { GeometricBackground } from "@/components/ui/GeometricBackground";
 import withAuth from "@/components/withAuth";
 import type { RealtimePostgresChangesPayload } from "@supabase/supabase-js";
 
-import { TaskSeeder } from "@/components/dev/TaskSeeder";
-import { SupabaseTestPanel } from "@/components/dev/SupabaseTestPanel";
+
 
 import {
   RefreshIcon,
@@ -25,8 +24,7 @@ import {
   SearchIcon,
   TaskIcon,
 } from "@/components/icons/DataRandIcons";
-import { setupSampleData } from "@/lib/setup-data";
-import { SupabaseDebugger, loadTasksWithDebug } from "@/lib/supabase-debug";
+
 
 
 function Tasks() {
@@ -44,57 +42,46 @@ function Tasks() {
   const { tasks: localTasks } = useLocalTasks();
 
   const fetchTasks = useCallback(async () => {
-    if (!profile) {
-      SupabaseDebugger.warn("No profile found, skipping task fetch");
-      return;
-    }
+    if (!profile) return;
     
-    SupabaseDebugger.log("Starting task fetch for profile:", profile.id);
     setLoading(true);
     
     try {
-      // Run full diagnostic first
-      const diagnostic = await SupabaseDebugger.runFullDiagnostic();
-      
-      if (!diagnostic.environment) {
-        throw new Error("Environment variables not configured properly");
-      }
-      
-      if (!diagnostic.connection) {
-        throw new Error("Cannot connect to Supabase");
-      }
-
-      // Load task types with debugging
-      SupabaseDebugger.log("Loading task types...");
+      // Load task types
       const { data: types, error: typesError } = await supabase
         .from("task_types")
         .select("*");
         
       if (typesError) {
-        SupabaseDebugger.error("Failed to load task types:", typesError);
-      } else {
-        SupabaseDebugger.log("Task types loaded:", types?.length || 0);
-        setTaskTypes(types as TaskType[] || []);
+        throw typesError;
       }
-
-      // Load tasks with enhanced debugging
-      const taskResult = await loadTasksWithDebug();
       
-      if (!taskResult.success) {
-        throw new Error(taskResult.error);
+      const loadedTaskTypes = types as TaskType[] || [];
+      setTaskTypes(loadedTaskTypes);
+
+      // Load tasks
+      const { data: tasks, error: tasksError } = await supabase
+        .from("tasks")
+        .select(`
+          *,
+          task_type:task_types(*)
+        `)
+        .eq("status", "available")
+        .order("created_at", { ascending: false });
+
+      if (tasksError) {
+        throw tasksError;
       }
 
       // Filter by selected type if needed
-      let filteredTasks: Task[] = (taskResult.data || []) as Task[];
+      let filteredTasks: Task[] = (tasks || []) as Task[];
       
-      // Add local tasks to the mix
+      // Add local tasks
       const localTasksFormatted: Task[] = localTasks.map(localTask => {
-        // Find the matching task type from loaded types
-        const matchingType = taskTypes.find(type => type.id === localTask.task_type_id);
+        const matchingType = loadedTaskTypes.find(type => type.id === localTask.task_type_id);
         
         return {
           ...localTask,
-          // Convert local task format to match expected Task format
           status: localTask.status as Task['status'],
           data: null as Task['data'],
           expires_at: null,
@@ -108,80 +95,31 @@ function Tasks() {
         };
       });
       
-      // Combine server tasks with local tasks
       const allTasks: Task[] = [...filteredTasks, ...localTasksFormatted];
       
       if (selectedType && allTasks) {
-        SupabaseDebugger.log("Filtering tasks by type:", selectedType);
         filteredTasks = allTasks.filter(task => task.task_type_id === selectedType);
-        SupabaseDebugger.log("Filtered tasks count:", filteredTasks.length);
       } else {
         filteredTasks = allTasks;
       }
 
       setTasks(filteredTasks);
-      SupabaseDebugger.log("Tasks successfully set in state:", filteredTasks.length);
       
     } catch (err) {
-      SupabaseDebugger.error("Task fetch failed:", err);
-      
       const errorMessage = err instanceof Error ? err.message : "Unknown error";
       
       toast({
         title: "Failed to load tasks",
-        description: `Error: ${errorMessage}. Check console for details.`,
+        description: errorMessage,
         variant: "destructive",
       });
       
       setTasks([]);
     } finally {
       setLoading(false);
-      SupabaseDebugger.log("Task fetch completed");
     }
   }, [profile, selectedType, toast, localTasks]);
 
-  // Enhanced connection test on mount
-  useEffect(() => {
-    const testConnection = async () => {
-      SupabaseDebugger.log("=== COMPONENT MOUNT DIAGNOSTICS ===");
-      
-      // Run comprehensive diagnostic
-      const diagnostic = await SupabaseDebugger.runFullDiagnostic();
-      
-      if (!diagnostic.environment) {
-        toast({
-          title: "Configuration Error",
-          description: "Supabase environment variables are missing. Check your .env file.",
-          variant: "destructive",
-        });
-        return;
-      }
-      
-      if (!diagnostic.connection) {
-        toast({
-          title: "Connection Issue", 
-          description: "Cannot connect to Supabase. Check your configuration.",
-          variant: "destructive",
-        });
-        return;
-      }
-      
-      if (!diagnostic.tasksTable) {
-        toast({
-          title: "Database Issue",
-          description: "Tasks table is not accessible. Check your database setup.",
-          variant: "destructive",
-        });
-        return;
-      }
-      
-      SupabaseDebugger.log("All diagnostics passed ✓");
-    };
-    
-    testConnection();
-  }, [toast]);
-
-  // Fetch tasks only once when profile loads or selectedType changes
   useEffect(() => {
     if (profile) {
       fetchTasks();
@@ -225,16 +163,10 @@ useEffect(() => {
 
 
   const handleAcceptTask = async (taskId: string) => {
-    if (!profile) {
-      SupabaseDebugger.warn("No profile found for task acceptance");
-      return;
-    }
-
-    SupabaseDebugger.log("Accepting task:", { taskId, workerId: profile.id });
+    if (!profile) return;
 
     try {
       // Create assignment
-      SupabaseDebugger.log("Creating task assignment...");
       const { error: assignError } = await supabase
         .from("task_assignments")
         .insert({
@@ -244,15 +176,9 @@ useEffect(() => {
         });
 
       if (assignError) {
-        SupabaseDebugger.error("Assignment creation failed:", assignError);
-        
         let userMessage = "Failed to accept task. Please try again.";
         if (assignError.code === "23505") {
           userMessage = "You've already accepted this task.";
-        } else if (assignError.message.includes("violates foreign key constraint")) {
-          userMessage = "Task or worker not found. Please refresh and try again.";
-        } else {
-          userMessage = assignError.message; // Use Supabase error message if available
         }
 
         toast({
@@ -260,32 +186,23 @@ useEffect(() => {
           description: userMessage,
           variant: "destructive",
         });
-        return; // Stop execution if assignment fails
+        return;
       }
 
-      SupabaseDebugger.log("Assignment created successfully ✓");
-
       // Update task status
-      SupabaseDebugger.log("Updating task status to assigned...");
       const { error: updateError } = await supabase
         .from("tasks")
         .update({ status: "assigned" })
         .eq("id", taskId);
 
       if (updateError) {
-        SupabaseDebugger.error("Task status update failed:", updateError);
-        // Even if task status update fails, the assignment was created.
-        // We might want to log this for admin but still tell user it was accepted.
-        // For now, we'll treat it as a failure to accept.
         toast({
           title: "Challenge Accepted (with issues)",
-          description: "Task accepted, but there was an issue updating its status. Please check 'My Work'.",
+          description: "Task accepted, but there was an issue updating its status.",
           variant: "destructive",
         });
         return;
       }
-
-      SupabaseDebugger.log("Task status updated successfully ✓");
 
       toast({
         title: "Challenge Accepted! 🦁",
@@ -294,9 +211,7 @@ useEffect(() => {
 
       router.push("/my-work");
     } catch (err) {
-      SupabaseDebugger.error("Task acceptance failed:", err);
-      
-      const errorMessage = err instanceof Error ? err.message : String(err); // Convert any error to string
+      const errorMessage = err instanceof Error ? err.message : String(err);
       
       toast({
         title: "Error",
@@ -306,23 +221,7 @@ useEffect(() => {
     }
   };
 
-  const handleSetupData = async () => {
-    const result = await setupSampleData();
-    if (result.success) {
-      toast({
-        title: "Success",
-        description: "Sample data created successfully!",
-      });
-      fetchTasks();
-    } else {
-      toast({
-        title: "Setup Failed", 
-        description: result.error,
-        variant: "destructive",
-      });
-    }
-  };
-  
+
   const filteredTasks = tasks.filter((task) =>
     task.title.toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -341,13 +240,7 @@ useEffect(() => {
   return (
     <AppLayout>
       <div className="space-y-4 sm:space-y-6 max-w-7xl mx-auto">
-        {/* Development Tools */}
-        {process.env.NODE_ENV === 'development' && (
-          <div className="space-y-4">
-            <SupabaseTestPanel />
-            <TaskSeeder />
-          </div>
-        )}
+
 
         {/* Header */}
         <div className="flex flex-col gap-3 sm:gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -372,32 +265,10 @@ useEffect(() => {
               <RefreshIcon size={16} className={`sm:w-[18px] sm:h-[18px] ${loading ? "animate-spin" : ""}`} />
               <span className="text-sm sm:text-base">Refresh</span>
             </Button>
-            {process.env.NODE_ENV === 'development' && (
-              <Button
-                variant="secondary"
-                onClick={handleSetupData}
-                className="w-full sm:w-fit gap-2 h-9 sm:h-10"
-              >
-                Setup Data
-              </Button>
-            )}
           </div>
         </div>
 
-        {/* Debug Info (remove in production) */}
-        {process.env.NODE_ENV === 'development' && (
-          <div className="bg-muted/50 p-3 sm:p-4 rounded-lg text-xs sm:text-sm">
-            <p><strong>Debug Info:</strong></p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-1 mt-1">
-              <p>Profile ID: {profile?.id}</p>
-              <p>Tasks loaded: {tasks.length}</p>
-              <p>Task types loaded: {taskTypes.length}</p>
-              <p>Selected type: {selectedType || 'All'}</p>
-              <p>Search query: &quot;{searchQuery}&quot;</p>
-              <p>Filtered tasks: {filteredTasks.length}</p>
-            </div>
-          </div>
-        )}
+
 
         {/* Search & Filters */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center">

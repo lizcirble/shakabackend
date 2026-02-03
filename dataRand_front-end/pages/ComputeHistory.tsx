@@ -9,6 +9,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Clock, Cpu, DollarSign, Calendar } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { DataSeeder } from "@/components/dev/DataSeeder";
 
 interface ComputeSession {
   id: string;
@@ -24,46 +26,57 @@ interface ComputeSession {
 export default function ComputeHistory() {
   const { profile } = useAuth();
   const router = useRouter();
-  const { totalEarnings, totalComputeSessions, totalComputeMinutes } = useGlobalMetrics();
+  const { totalEarnings, totalComputeSessions, totalComputeMinutes, refreshMetrics } = useGlobalMetrics();
   const [sessions, setSessions] = useState<ComputeSession[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Simulate compute history data
-    const mockSessions: ComputeSession[] = [
-      {
-        id: '1',
-        device: 'laptop',
-        startTime: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2 hours ago
-        endTime: new Date(Date.now() - 1 * 60 * 60 * 1000), // 1 hour ago
-        duration: 60,
-        earnings: 0.06,
-        cpuUsage: 45,
-        status: 'completed'
-      },
-      {
-        id: '2',
-        device: 'phone',
-        startTime: new Date(Date.now() - 4 * 60 * 60 * 1000), // 4 hours ago
-        endTime: new Date(Date.now() - 3.5 * 60 * 60 * 1000), // 3.5 hours ago
-        duration: 30,
-        earnings: 0.03,
-        cpuUsage: 32,
-        status: 'completed'
-      },
-      {
-        id: '3',
-        device: 'laptop',
-        startTime: new Date(Date.now() - 24 * 60 * 60 * 1000), // 1 day ago
-        endTime: new Date(Date.now() - 22 * 60 * 60 * 1000), // 22 hours ago
-        duration: 120,
-        earnings: 0.12,
-        cpuUsage: 52,
-        status: 'completed'
+    const loadComputeSessions = async () => {
+      if (!profile) return;
+      
+      setLoading(true);
+      try {
+        const { data: sessionsData, error } = await supabase
+          .from('compute_sessions')
+          .select('*')
+          .eq('worker_id', profile.id)
+          .order('started_at', { ascending: false });
+
+        if (error) throw error;
+
+        if (sessionsData) {
+          const formattedSessions: ComputeSession[] = sessionsData.map(session => {
+            const startTime = new Date(session.started_at);
+            const endTime = session.ended_at ? new Date(session.ended_at) : new Date();
+            const duration = Math.floor((endTime.getTime() - startTime.getTime()) / (1000 * 60));
+            
+            return {
+              id: session.id,
+              device: (session.device_type === 'phone' ? 'phone' : 'laptop') as 'phone' | 'laptop',
+              startTime,
+              endTime,
+              duration,
+              earnings: session.total_earned,
+              cpuUsage: Math.floor(Math.random() * 40) + 30, // Simulated CPU usage
+              status: session.is_active ? 'interrupted' : 'completed'
+            };
+          });
+          
+          setSessions(formattedSessions);
+        }
+      } catch (error) {
+        console.error('Error loading compute sessions:', error);
+        // Fallback to empty array
+        setSessions([]);
+      } finally {
+        setLoading(false);
       }
-    ];
-    
-    setSessions(mockSessions);
-  }, []);
+    };
+
+    loadComputeSessions();
+    // Also refresh global metrics to ensure consistency
+    refreshMetrics();
+  }, [profile, refreshMetrics]);
 
   const formatDate = (date: Date) => {
     return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -89,6 +102,9 @@ export default function ComputeHistory() {
             <p className="text-sm sm:text-base text-muted-foreground">View all your compute sharing sessions</p>
           </div>
         </div>
+
+        {/* Development Data Seeder */}
+        {process.env.NODE_ENV === 'development' && <DataSeeder />}
 
         {/* Summary Stats */}
         <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
@@ -138,7 +154,11 @@ export default function ComputeHistory() {
             <CardDescription className="text-xs sm:text-sm">Detailed breakdown of your compute sharing sessions</CardDescription>
           </CardHeader>
           <CardContent className="px-3 sm:px-6 pb-3 sm:pb-6">
-            {sessions.length === 0 ? (
+            {loading ? (
+              <div className="text-center py-6 sm:py-8">
+                <p className="text-muted-foreground text-sm sm:text-base">Loading sessions...</p>
+              </div>
+            ) : sessions.length === 0 ? (
               <div className="text-center py-6 sm:py-8">
                 <p className="text-muted-foreground text-sm sm:text-base">No compute sessions yet</p>
                 <Button 

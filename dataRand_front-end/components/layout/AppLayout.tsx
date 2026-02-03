@@ -149,10 +149,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
             {/* Profile Dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  className="relative h-11 w-11 rounded-full p-0 ring-2 ring-primary/20 hover:ring-primary/50 transition-all"
-                >
+                <div className="relative h-11 w-11 rounded-full p-0 ring-2 ring-primary/20 hover:ring-primary/50 transition-all cursor-pointer">
                   <ProfileAvatar
                     src={profile?.avatar_url}
                     name={profile?.full_name}
@@ -160,7 +157,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
                     size="md"
                     className="ring-2 ring-primary/20"
                   />
-                </Button>
+                </div>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-64">
                 <div className="flex items-center gap-3 p-4 bg-gradient-to-br from-primary/5 to-transparent">

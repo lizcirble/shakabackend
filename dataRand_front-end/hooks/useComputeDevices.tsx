@@ -2,8 +2,9 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useAuth } from "./useAuth";
-// import { supabase } from "@/lib/supabase"; // Commented out Supabase import
+import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "./use-toast";
+import { useGlobalMetrics } from "./useGlobalMetrics";
 
 export interface DeviceState {
   isActive: boolean;
@@ -16,6 +17,7 @@ export interface DeviceState {
 export function useComputeDevices() {
   const { profile } = useAuth();
   const { toast } = useToast();
+  const { addComputeSession } = useGlobalMetrics();
   
   const [phoneState, setPhoneState] = useState<DeviceState>({
     isActive: false,
@@ -252,11 +254,36 @@ export function useComputeDevices() {
           description: "You're now earning from your idle resources. 15% goes to education."
         });
       } else {
-        // Simulate End session
+        // End session and save to database
         localStorage.setItem(`${device}ComputeActive`, 'false');
         localStorage.removeItem(`${device}ComputeStartTime`);
 
         const sessionEarnings = currentState.sessionMinutes * 0.001;
+        
+        // Save session to database
+        try {
+          await addComputeSession(currentState.sessionMinutes, sessionEarnings);
+          
+          // Also save to Supabase directly for immediate availability
+          if (profile) {
+            const startTime = isPhone ? phoneStartRef.current : laptopStartRef.current;
+            if (startTime) {
+              await supabase
+                .from('compute_sessions')
+                .insert({
+                  worker_id: profile.id,
+                  device_type: device,
+                  started_at: startTime.toISOString(),
+                  ended_at: new Date().toISOString(),
+                  total_earned: sessionEarnings,
+                  earnings_rate: 0.001,
+                  is_active: false,
+                });
+            }
+          }
+        } catch (error) {
+          console.error('Error saving compute session:', error);
+        }
         
         toast({
           title: `${isPhone ? 'Phone' : 'Laptop'} Compute Stopped`,
