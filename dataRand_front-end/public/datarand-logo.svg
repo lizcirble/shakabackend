@@ -1,0 +1,21 @@
+<svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Left spear -->
+  <path d="M8 4L12 14L8 16L12 44" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+  <path d="M8 4L5 10L8 12L12 4" fill="currentColor" stroke="currentColor" stroke-width="1" />
+  
+  <!-- Right spear -->
+  <path d="M40 4L36 14L40 16L36 44" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+  <path d="M40 4L43 10L40 12L36 4" fill="currentColor" stroke="currentColor" stroke-width="1" />
+  
+  <!-- Central Bantu shield -->
+  <path d="M24 8C18 8 14 14 14 22C14 32 20 40 24 42C28 40 34 32 34 22C34 14 30 8 24 8Z" fill="white" stroke="currentColor" stroke-width="2.5" />
+  
+  <!-- Shield geometric pattern - Global South symbol -->
+  <path d="M24 12L28 18L24 24L20 18L24 12Z" stroke="currentColor" stroke-width="1.5" fill="currentColor" opacity="0.3" />
+  <path d="M24 24L28 30L24 36L20 30L24 24Z" stroke="currentColor" stroke-width="1.5" />
+  <!-- Center dot representing unity -->
+  <circle cx="24" cy="24" r="3" fill="currentColor" />
+  
+  <!-- Africa + India connection lines -->
+  <path d="M20 24H28" stroke="currentColor" stroke-width="1.5" />
+</svg>

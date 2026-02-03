@@ -10,7 +10,7 @@ import { DataRandLogo } from "@/components/icons/DataRandIcons";
 
 const LoadingScreen = ({ message = "Loading..." }: { message?: string }) => {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 via-blue-50 to-purple-50">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 via-gray-800 to-black">
       <motion.div
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}

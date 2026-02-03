@@ -13,7 +13,7 @@ export const privyConfig: PrivyClientConfig = {
 
   appearance: {
     showWalletLoginFirst: true,
-    logo: '/logo.png',
+    logo: '/datarand-logo.svg',
   },
 
   defaultChain: base,
