@@ -39,13 +39,13 @@ export default function ClientDashboard() {
       router.push("/auth");
       return;
     }
-    if (!authLoading && profile && profile.role !== "client") {
-      router.push("/tasks");
+    if (!authLoading && profile) {
+      // Remove role check - allow all authenticated users
     }
   }, [authLoading, profile, router]);
 
   useEffect(() => {
-    if (!profile || profile.role !== "client") return;
+    if (!profile) return;
 
     const fetchData = async () => {
       setLoading(true);

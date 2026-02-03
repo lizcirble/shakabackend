@@ -100,7 +100,7 @@ useEffect(() => {
       if (error) {
         console.error("Error fetching assignments:", error);
       } else {
-        setAssignments((data as AssignmentWithTask[]) || []);
+        setAssignments((data as any) || []);
       }
     } catch (err) {
       console.error("Error:", err);
@@ -510,10 +510,10 @@ function AssignmentGrid({
                 </div>
               )}
 
-              {assignment.status === "rejected" && assignment.client_feedback && (
+              {assignment.status === "rejected" && (assignment as any).client_feedback && (
                 <div className="p-2 rounded-lg bg-red-500/10 text-red-500 text-sm">
                   <p className="font-medium mb-1">Feedback:</p>
-                  <p>{assignment.client_feedback}</p>
+                  <p>{(assignment as any).client_feedback}</p>
                 </div>
               )}
             </CardContent>

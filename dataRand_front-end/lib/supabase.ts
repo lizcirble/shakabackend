@@ -6,10 +6,9 @@ export type { User, Session };
 
 export type Profile = {
   id: string;
-  auth_id: string;
+  privy_id: string;
   email: string | null;
   full_name: string | null;
-  role: "worker" | "client" | "admin";
   avatar_url: string | null;
   reputation_score: number;
   total_earnings: number;
@@ -23,6 +22,17 @@ export type TaskType = {
   name: string;
   description: string | null;
   icon: string | null;
+};
+
+export type Transaction = {
+  id: string;
+  profile_id: string;
+  amount: number;
+  type: string;
+  description: string | null;
+  status: string;
+  task_assignment_id: string | null;
+  created_at: string;
 };
 
 export type Task = {
@@ -50,31 +60,18 @@ export type Task = {
 export type TaskAssignment = {
   id: string;
   task_id: string;
-  worker_id: string;
+  worker_email: string | null;
   status: "accepted" | "in_progress" | "submitted" | "approved" | "rejected" | "abandoned";
   submission_data: Record<string, unknown> | null;
   started_at: string;
   submitted_at: string | null;
   reviewed_at: string | null;
-  client_feedback: string | null;
-  quality_rating: number | null;
   task?: Task;
-};
-
-export type Transaction = {
-  id: string;
-  profile_id: string;
-  task_assignment_id: string | null;
-  amount: number;
-  type: "earning" | "withdrawal" | "bonus" | "education_fund" | "platform_fee";
-  status: "pending" | "completed" | "failed";
-  description: string | null;
-  created_at: string;
 };
 
 export type Notification = {
   id: string;
-  user_id: string;
+  user_email: string;
   type: "task_available" | "task_approved" | "task_rejected" | "payment" | "system";
   title: string;
   message: string | null;
