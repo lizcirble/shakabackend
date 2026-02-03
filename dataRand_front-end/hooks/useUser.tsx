@@ -31,11 +31,11 @@ export function useUser() {
       const { data: existingProfile } = await supabase
         .from("profiles")
         .select("*")
-        .eq("auth_id", userId)
+        .eq("privy_id", userId)
         .maybeSingle();
 
       if (existingProfile) {
-        setProfile(existingProfile as any);
+        setProfile(existingProfile as Profile);
       } else {
         // Create the profile in the database immediately
         const emailAddress = privyUser?.email?.address || null;
@@ -44,7 +44,7 @@ export function useUser() {
         const { data: newProfile, error: createError } = await supabase
           .from("profiles")
           .insert({
-            auth_id: userId,
+            privy_id: userId,
             email: emailAddress,
             full_name: fullName,
             created_at: new Date().toISOString(),
@@ -56,7 +56,7 @@ export function useUser() {
           console.error("Error creating profile:", createError);
           setProfile(null);
         } else {
-          setProfile(newProfile as any);
+          setProfile(newProfile as Profile);
         }
       }
     } catch (error) {
