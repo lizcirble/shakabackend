@@ -70,7 +70,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
   const [showSignOutModal, setShowSignOutModal] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
 
-  const navItems = profile?.role === "client" ? clientNavItems : workerNavItems;
+  const navItems = workerNavItems; // Default to worker navigation
 
   const handleSignOut = async () => {
     setIsSigningOut(true);

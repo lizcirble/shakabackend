@@ -77,7 +77,7 @@ export default function Notifications() {
         .order("created_at", { ascending: false })
         .limit(50);
 
-      setNotifications((data as Notification[]) || []);
+      setNotifications((data as any) || []);
     } catch (err) {
       console.error("Error:", err);
     } finally {

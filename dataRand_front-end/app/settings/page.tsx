@@ -110,7 +110,7 @@ export default function SettingsPage() {
             </div>
 
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
-              <Badge variant="secondary">{profile?.role}</Badge>
+              <Badge variant="secondary">User</Badge>
               <span className="text-xs sm:text-sm text-muted-foreground">Account Type</span>
             </div>
 

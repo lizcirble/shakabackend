@@ -35,28 +35,29 @@ export function useUser() {
         .maybeSingle();
 
       if (existingProfile) {
-        setProfile(existingProfile as Profile);
+        setProfile(existingProfile as any);
       } else {
-        // The user does not want to create a profile in the database.
-        // We will create a temporary, client-side-only profile to allow the UI to render.
-        // Note: Functionality that requires a database profile (e.g., accepting tasks) will not work.
+        // Create the profile in the database immediately
         const emailAddress = privyUser?.email?.address || null;
         const fullName = privyUser?.google?.name || privyUser?.twitter?.name || privyUser?.github?.name || emailAddress?.split("@")[0] || null;
 
-        const tempProfile: Profile = {
-          id: 'temp-id-' + userId, // Temporary ID
-          auth_id: userId,
-          email: emailAddress,
-          full_name: fullName,
-          role: "worker",
-          avatar_url: null,
-          reputation_score: 0,
-          total_earnings: 0,
-          tasks_completed: 0,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        };
-        setProfile(tempProfile);
+        const { data: newProfile, error: createError } = await supabase
+          .from("profiles")
+          .insert({
+            auth_id: userId,
+            email: emailAddress,
+            full_name: fullName,
+            created_at: new Date().toISOString(),
+          })
+          .select()
+          .single();
+
+        if (createError) {
+          console.error("Error creating profile:", createError);
+          setProfile(null);
+        } else {
+          setProfile(newProfile as any);
+        }
       }
     } catch (error) {
       console.error("Profile error:", error);
@@ -70,37 +71,11 @@ export function useUser() {
     if (!privyUser || !profile) return { error: new Error("Not authenticated") }
 
     try {
-      // If this is a temporary profile, create it in the database first
-      if (profile.id.startsWith('temp-id-')) {
-        const emailAddress = privyUser?.email?.address || null;
-        const fullName = privyUser?.google?.name || privyUser?.twitter?.name || privyUser?.github?.name || emailAddress?.split("@")[0] || null;
-
-        const { data: newProfile, error: createError } = await supabase
-          .from("profiles")
-          .insert({
-            auth_id: privyUser.id,
-            email: emailAddress,
-            full_name: fullName,
-            role: "worker",
-            ...updates
-          })
-          .select()
-          .single()
-
-        if (createError) {
-          console.error("Error creating profile:", createError)
-          return { error: createError }
-        }
-
-        setProfile(newProfile as Profile)
-        return { error: null }
-      }
-
       // Update existing profile
       const { error } = await supabase
         .from("profiles")
         .update(updates)
-        .eq("auth_id", privyUser.id)
+        .eq("privy_id", privyUser.id)
 
       if (!error) {
         setProfile({ ...profile, ...updates })

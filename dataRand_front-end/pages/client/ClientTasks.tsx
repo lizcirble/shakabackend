@@ -60,8 +60,8 @@ export default function ClientTasks() {
       router.push("/auth");
       return;
     }
-    if (!authLoading && profile && profile.role !== "client") {
-      router.push("/tasks");
+    if (!authLoading && profile) {
+      // Remove role check - allow all authenticated users
     }
   }, [authLoading, profile, router]);
 
@@ -78,7 +78,7 @@ export default function ClientTasks() {
         .eq("client_id", profile.id)
         .order("created_at", { ascending: false });
 
-      setTasks((data as TaskWithAssignments[]) || []);
+      setTasks((data as any) || []);
     } catch (err) {
       console.error("Error:", err);
     } finally {
@@ -87,7 +87,7 @@ export default function ClientTasks() {
   };
 
   useEffect(() => {
-    if (profile && profile.role === "client") {
+    if (profile) {
       fetchTasks();
     }
   }, [profile]);
