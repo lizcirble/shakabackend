@@ -6,13 +6,15 @@ export type { User, Session };
 
 export type Profile = {
   id: string;
-  privy_id: string;
+  auth_id: string;
   email: string | null;
   full_name: string | null;
   avatar_url: string | null;
   reputation_score: number;
   total_earnings: number;
   tasks_completed: number;
+  compute_active: boolean | null;
+  compute_earnings: number | null;
   created_at: string;
   updated_at: string;
 };

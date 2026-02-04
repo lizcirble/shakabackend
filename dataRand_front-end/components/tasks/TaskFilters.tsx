@@ -8,11 +8,16 @@ import {
   TaskIcon,
 } from "@/components/icons/DataRandIcons";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { Camera, Mic, Brain, Grid3X3 } from "lucide-react";
 
 const taskTypeIcons: Record<string, React.ComponentType<{ size?: number; className?: string }>> = {
-  image_labeling: ImageLabelIcon,
-  audio_transcription: AudioIcon,
-  ai_evaluation: AIIcon,
+  image_labeling: Camera,
+  audio_transcription: Mic,
+  ai_evaluation: Brain,
+  data_entry: Grid3X3,
+  content_moderation: ImageLabelIcon,
+  translation: AIIcon,
+  survey: TaskIcon,
 };
 
 type TaskFiltersProps = {
@@ -48,7 +53,7 @@ export function TaskFilters({
             </div>
           </SelectItem>
           {taskTypes.map((type) => {
-            const Icon = taskTypeIcons[type.name] || AIIcon;
+            const Icon = taskTypeIcons[type.name] || TaskIcon;
             return (
               <SelectItem key={type.id} value={type.id}>
                 <div className="flex items-center gap-2">
@@ -76,7 +81,7 @@ export function TaskFilters({
       </Button>
 
       {taskTypes.map((type) => {
-        const Icon = taskTypeIcons[type.name] || AIIcon;
+        const Icon = taskTypeIcons[type.name] || TaskIcon;
         const isSelected = selectedType === type.id;
 
         return (
