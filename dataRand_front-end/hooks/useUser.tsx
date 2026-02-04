@@ -28,26 +28,51 @@ export function useUser() {
       return
     }
 
-    // Create profile from Privy user data directly
-    const privyProfile: Profile = {
-      id: privyUser.id,
-      auth_id: privyUser.id,
-      email: privyUser.email?.address || null,
-      full_name: privyUser.google?.name || privyUser.twitter?.name || privyUser.github?.name || null,
-      avatar_url: null,
-      reputation_score: 0,
-      total_earnings: 0,
-      tasks_completed: 0,
-      compute_active: false,
-      compute_earnings: 0,
-      created_at: privyUser.createdAt.toISOString(),
-      updated_at: new Date().toISOString(),
-    };
-
-    console.log("Created profile from Privy data:", privyProfile);
-    setProfile(privyProfile);
-    setIsLoading(false);
+    fetchOrCreateProfile(privyUser.id)
   }, [ready, authenticated, privyUser])
+
+  const fetchOrCreateProfile = async (userId: string) => {
+    try {
+      // First try to fetch existing profile
+      const { data: existingProfile } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("privy_id", userId)
+        .maybeSingle();
+
+      if (existingProfile) {
+        console.log("Found existing profile:", existingProfile);
+        setProfile(existingProfile as Profile);
+      } else {
+        // Create profile in database
+        const profileData = {
+          privy_id: userId,
+          email: privyUser?.email?.address || null,
+          full_name: privyUser?.google?.name || privyUser?.twitter?.name || privyUser?.github?.name || null,
+          created_at: new Date().toISOString(),
+        };
+
+        const { data: newProfile, error } = await supabase
+          .from("profiles")
+          .insert(profileData)
+          .select()
+          .single();
+
+        if (error) {
+          console.error("Error creating profile:", error);
+          setProfile(null);
+        } else {
+          console.log("Created new profile:", newProfile);
+          setProfile(newProfile as Profile);
+        }
+      }
+    } catch (error) {
+      console.error("Profile error:", error);
+      setProfile(null);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const updateProfile = async (updates: Partial<Profile>) => {
     if (!privyUser || !profile) return { error: new Error("Not authenticated") }
@@ -57,7 +82,7 @@ export function useUser() {
       const { error } = await supabase
         .from("profiles")
         .update(updates)
-        .eq("auth_id", privyUser.id)
+        .eq("privy_id", privyUser.id)
 
       if (!error) {
         setProfile({ ...profile, ...updates })
