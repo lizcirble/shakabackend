@@ -28,7 +28,7 @@ import {
 
 
 function Tasks() {
-  const { profile } = useAuth();
+  const { profile, loading: authLoading } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
 
@@ -230,8 +230,12 @@ useEffect(() => {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
-          <p className="text-sm text-muted-foreground">No profile found. Please sign in.</p>
-          <Button onClick={() => router.push("/auth")}>Go to Sign In</Button>
+          <p className="text-sm text-muted-foreground">
+            {authLoading ? "Loading profile..." : "No profile found. Please sign in."}
+          </p>
+          {!authLoading && (
+            <Button onClick={() => router.push("/auth")}>Go to Sign In</Button>
+          )}
         </div>
       </div>
     );
