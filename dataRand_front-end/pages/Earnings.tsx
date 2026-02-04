@@ -29,6 +29,13 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
   DollarSign,
   TrendingUp,
   Clock,
@@ -40,6 +47,7 @@ import {
   Copy,
   Send,
   RefreshCw,
+  Loader2,
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { WithdrawalDialog } from "@/components/earnings/WithdrawalDialog";
@@ -94,6 +102,8 @@ function Earnings() {
   const [withdrawAddress, setWithdrawAddress] = useState("");
   const [withdrawAmount, setWithdrawAmount] = useState("");
   const [withdrawError, setWithdrawError] = useState<string | null>(null);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const { switchChain, isPending: isSwitching } = useSwitchChain();
   const { mutateAsync: sendTransactionAsync, data: txHash, isPending: isSending } = useSendTransaction();
   const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({
@@ -274,6 +284,30 @@ function Earnings() {
       return;
     }
 
+    // Show confirmation modal instead of sending directly
+    setShowConfirmModal(true);
+  };
+
+  const handleRefreshWallet = async () => {
+    setIsRefreshing(true);
+    try {
+      await refetchWallet();
+      toast({
+        title: "Wallet refreshed",
+        description: "Balance and wallet data updated successfully.",
+      });
+    } catch (error) {
+      toast({
+        title: "Refresh failed",
+        description: "Unable to refresh wallet data. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setTimeout(() => setIsRefreshing(false), 500); // Keep animation for a bit
+    }
+  };
+
+  const confirmSendWithdrawal = async () => {
     try {
       await sendTransactionAsync({
         to: withdrawAddress as `0x${string}`,
@@ -284,6 +318,7 @@ function Earnings() {
         title: "Transaction submitted",
         description: "Confirm the transfer in your wallet.",
       });
+      setShowConfirmModal(false);
     } catch (err) {
       console.error("Send error:", err);
       toast({
@@ -291,13 +326,14 @@ function Earnings() {
         description: "Unable to send the transaction. Please try again.",
         variant: "destructive",
       });
+      setShowConfirmModal(false);
     }
   };
 
   const shortAddress = address
     ? `${address.slice(0, 6)}...${address.slice(-4)}`
     : "Not connected";
-  const chainLabel = currentChain?.name || "Select Network";
+  const chainLabel = currentChain?.name?.replace(" One", "") || "Select Network";
 
   return (
     <AppLayout>
@@ -457,8 +493,8 @@ function Earnings() {
                       <Copy className="h-4 w-4 mr-2" />
                       Copy
                     </Button>
-                    <Button variant="ghost" size="sm" onClick={() => refetchWallet()}>
-                      <RefreshCw className="h-4 w-4 mr-2" />
+                    <Button variant="ghost" size="sm" onClick={handleRefreshWallet} disabled={isRefreshing}>
+                      <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? "animate-spin" : ""}`} />
                       Refresh
                     </Button>
                   </div>
@@ -486,10 +522,6 @@ function Earnings() {
                     <div className="rounded-md bg-muted/40 p-3 text-xs font-mono break-all">
                       {shortAddress}
                     </div>
-                    <Button variant="secondary" size="sm" onClick={handleCopyAddress}>
-                      <Copy className="h-4 w-4 mr-2" />
-                      Copy Address
-                    </Button>
                   </div>
 
                   <div className="rounded-lg border border-border/60 p-4 space-y-3">
@@ -526,7 +558,14 @@ function Earnings() {
                     <Button
                       className="w-full"
                       onClick={handleSendWithdrawal}
-                      disabled={isSending || isConfirming || walletLoading}
+                      disabled={
+                        isSending || 
+                        isConfirming || 
+                        walletLoading || 
+                        !withdrawAddress.trim() || 
+                        !withdrawAmount.trim() ||
+                        Number(withdrawAmount) <= 0
+                      }
                     >
                       {(isSending || isConfirming) ? (
                         "Processing..."
@@ -682,6 +721,64 @@ function Earnings() {
             onSuccess={fetchData}
           />
         )}
+
+        {/* Transaction Confirmation Modal */}
+        <Dialog open={showConfirmModal} onOpenChange={setShowConfirmModal}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <AlertCircle className="h-5 w-5 text-yellow-500" />
+                Confirm Transaction
+              </DialogTitle>
+              <DialogDescription>
+                Please review the transaction details before confirming.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label>Recipient Address</Label>
+                <div className="p-3 rounded-lg bg-muted font-mono text-sm break-all">
+                  {withdrawAddress}
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label>Amount</Label>
+                <div className="p-3 rounded-lg bg-muted font-semibold">
+                  {withdrawAmount} {symbol}
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label>Network</Label>
+                <div className="p-3 rounded-lg bg-muted">
+                  {chainLabel}
+                </div>
+              </div>
+              <div className="flex gap-2 pt-4">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowConfirmModal(false)}
+                  className="flex-1"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={confirmSendWithdrawal}
+                  disabled={isSending || isConfirming}
+                  className="flex-1"
+                >
+                  {(isSending || isConfirming) ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Processing...
+                    </>
+                  ) : (
+                    "Confirm & Send"
+                  )}
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </AppLayout>
   );
