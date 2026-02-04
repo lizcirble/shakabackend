@@ -10,62 +10,44 @@ export function useUser() {
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
+    console.log("=== ACTIVE USER DEBUG ===");
+    console.log("Privy ready:", ready);
+    console.log("Authenticated:", authenticated);
+    console.log("Privy user:", privyUser);
+    console.log("Privy user ID:", privyUser?.id);
+    console.log("========================");
+
     if (!ready) {
       setIsLoading(true)
       return
     }
 
-    if (!authenticated || !privyUser?.id) {
+    if (!authenticated || !privyUser) {
       setProfile(null)
       setIsLoading(false)
       return
     }
 
-    fetchOrCreateProfile(privyUser.id)
-  }, [ready, authenticated, privyUser?.id])
+    // Create profile from Privy user data directly
+    const privyProfile: Profile = {
+      id: privyUser.id,
+      auth_id: privyUser.id,
+      email: privyUser.email?.address || null,
+      full_name: privyUser.google?.name || privyUser.twitter?.name || privyUser.github?.name || null,
+      avatar_url: null,
+      reputation_score: 0,
+      total_earnings: 0,
+      tasks_completed: 0,
+      compute_active: false,
+      compute_earnings: 0,
+      created_at: privyUser.createdAt.toISOString(),
+      updated_at: new Date().toISOString(),
+    };
 
-  const fetchOrCreateProfile = async (userId: string) => {
-    try {
-      console.log("Signed up user data from Privy:", privyUser);
-
-      const { data: existingProfile } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("privy_id", userId)
-        .maybeSingle();
-
-      if (existingProfile) {
-        setProfile(existingProfile as Profile);
-      } else {
-        // Create the profile in the database immediately
-        const emailAddress = privyUser?.email?.address || null;
-        const fullName = privyUser?.google?.name || privyUser?.twitter?.name || privyUser?.github?.name || emailAddress?.split("@")[0] || null;
-
-        const { data: newProfile, error: createError } = await supabase
-          .from("profiles")
-          .insert({
-            privy_id: userId,
-            email: emailAddress,
-            full_name: fullName,
-            created_at: new Date().toISOString(),
-          })
-          .select()
-          .single();
-
-        if (createError) {
-          console.error("Error creating profile:", createError);
-          setProfile(null);
-        } else {
-          setProfile(newProfile as Profile);
-        }
-      }
-    } catch (error) {
-      console.error("Profile error:", error);
-      setProfile(null);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    console.log("Created profile from Privy data:", privyProfile);
+    setProfile(privyProfile);
+    setIsLoading(false);
+  }, [ready, authenticated, privyUser])
 
   const updateProfile = async (updates: Partial<Profile>) => {
     if (!privyUser || !profile) return { error: new Error("Not authenticated") }
@@ -75,7 +57,7 @@ export function useUser() {
       const { error } = await supabase
         .from("profiles")
         .update(updates)
-        .eq("privy_id", privyUser.id)
+        .eq("auth_id", privyUser.id)
 
       if (!error) {
         setProfile({ ...profile, ...updates })
