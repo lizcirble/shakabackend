@@ -58,41 +58,70 @@ CREATE TABLE IF NOT EXISTS task_assignments (
   UNIQUE(task_id, worker_id)
 );
 
+-- Create notifications table
+CREATE TABLE IF NOT EXISTS notifications (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
+  type TEXT NOT NULL,
+  title TEXT NOT NULL,
+  message TEXT,
+  task_id UUID REFERENCES tasks(id) ON DELETE CASCADE,
+  read BOOLEAN DEFAULT FALSE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
 -- Enable RLS
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE tasks ENABLE ROW LEVEL SECURITY;
 ALTER TABLE task_types ENABLE ROW LEVEL SECURITY;
 ALTER TABLE task_assignments ENABLE ROW LEVEL SECURITY;
+ALTER TABLE notifications ENABLE ROW LEVEL SECURITY;
 
--- RLS Policies (drop existing ones first)
+-- RLS Policies for profiles
 DROP POLICY IF EXISTS "Allow anonymous read for connection test" ON profiles;
-DROP POLICY IF EXISTS "Allow anonymous read tasks" ON tasks;
-DROP POLICY IF EXISTS "Allow anonymous read task_types" ON task_types;
-DROP POLICY IF EXISTS "Allow anonymous read task_assignments" ON task_assignments;
-DROP POLICY IF EXISTS "Allow public insert tasks" ON tasks;
 DROP POLICY IF EXISTS "Allow public insert profiles" ON profiles;
-DROP POLICY IF EXISTS "Allow public insert task_assignments" ON task_assignments;
+DROP POLICY IF EXISTS "Allow select own profile" ON profiles;
+CREATE POLICY "Allow select own profile" ON profiles
+FOR SELECT USING (auth.uid()::text = auth_id);
 
-CREATE POLICY "Allow anonymous read for connection test" ON profiles
-FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Allow insert own profile" ON profiles;
+CREATE POLICY "Allow insert own profile" ON profiles
+FOR INSERT WITH CHECK (auth.uid()::text = auth_id);
 
-CREATE POLICY "Allow public insert profiles" ON profiles
-FOR INSERT WITH CHECK (true);
+DROP POLICY IF EXISTS "Allow update own profile" ON profiles;
+CREATE POLICY "Allow update own profile" ON profiles
+FOR UPDATE USING (auth.uid()::text = auth_id) WITH CHECK (auth.uid()::text = auth_id);
 
+-- RLS Policies for tasks
+DROP POLICY IF EXISTS "Allow anonymous read tasks" ON tasks;
 CREATE POLICY "Allow anonymous read tasks" ON tasks
 FOR SELECT USING (true);
 
-CREATE POLICY "Allow public insert tasks" ON tasks
+DROP POLICY IF EXISTS "Allow public insert tasks" ON tasks;
 FOR INSERT WITH CHECK (true);
 
+-- RLS Policies for task_types
+DROP POLICY IF EXISTS "Allow anonymous read task_types" ON task_types;
 CREATE POLICY "Allow anonymous read task_types" ON task_types
 FOR SELECT USING (true);
 
+-- RLS Policies for task_assignments
+DROP POLICY IF EXISTS "Allow anonymous read task_assignments" ON task_assignments;
 CREATE POLICY "Allow anonymous read task_assignments" ON task_assignments
 FOR SELECT USING (true);
 
+DROP POLICY IF EXISTS "Allow public insert task_assignments" ON task_assignments;
 CREATE POLICY "Allow public insert task_assignments" ON task_assignments
 FOR INSERT WITH CHECK (true);
+
+-- RLS Policies for notifications
+DROP POLICY IF EXISTS "Allow select own notifications" ON notifications;
+CREATE POLICY "Allow select own notifications" ON notifications
+FOR SELECT USING (user_id = (SELECT id FROM profiles WHERE auth_id = auth.uid()));
+
+DROP POLICY IF EXISTS "Allow update own notifications" ON notifications;
+CREATE POLICY "Allow update own notifications" ON notifications
+FOR UPDATE USING (user_id = (SELECT id FROM profiles WHERE auth_id = auth.uid())) WITH CHECK (user_id = (SELECT id FROM profiles WHERE auth_id = auth.uid()));
 
 -- Insert task types
 INSERT INTO task_types (name, description, icon) VALUES

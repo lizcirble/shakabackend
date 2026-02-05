@@ -71,6 +71,7 @@ function MyWork() {
   const [assignments, setAssignments] = useState<AssignmentWithTask[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("active");
+  const isMobile = useIsMobile();
   
   // Answer dialog state
   const [answerDialog, setAnswerDialog] = useState<{
@@ -206,7 +207,7 @@ useEffect(() => {
   return (
     <AppLayout>
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h1 className="text-3xl font-display font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
               My Work
