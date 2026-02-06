@@ -311,7 +311,7 @@ useEffect(() => {
 
             {/* Content */}
             {loading ? (
-              <div className="grid gap-4">
+              <div className="grid gap-3 sm:gap-4 grid-cols-1">
                 {[...Array(4)].map((_, i) => (
                   <Skeleton key={i} className="h-48 rounded-xl" />
                 ))}
@@ -371,7 +371,7 @@ useEffect(() => {
             </TabsList>
 
             {loading ? (
-              <div className="grid gap-4 md:grid-cols-2">
+              <div className="grid gap-3 sm:gap-4 grid-cols-1 md:grid-cols-2">
                 {[...Array(4)].map((_, i) => (
                   <Skeleton key={i} className="h-48 rounded-xl" />
                 ))}
@@ -596,7 +596,7 @@ function AssignmentGrid({
   }
 
   return (
-    <div className="grid gap-4 md:grid-cols-2">
+    <div className="grid gap-3 sm:gap-4 grid-cols-1 md:grid-cols-2">
       {assignments.filter(a => a.task).map((assignment) => {
         const status = statusConfig[assignment.status];
         const StatusIcon = status.icon;

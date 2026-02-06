@@ -22,23 +22,23 @@ export function useUser() {
   // This effect syncs the Privy auth token with Supabase
   useEffect(() => {
     const setAuthToken = async () => {
-      if (authenticated) {
+      if (authenticated && privyUser) {
         const accessToken = await getAccessToken()
         if (accessToken) {
-          supabase.auth.setSession({
+          await supabase.auth.setSession({
             access_token: accessToken,
-            refresh_token: "",
+            refresh_token: accessToken,
           })
         }
       } else {
-        supabase.auth.signOut()
+        await supabase.auth.signOut()
       }
     }
 
     if (ready) {
       setAuthToken()
     }
-  }, [ready, authenticated, getAccessToken])
+  }, [ready, authenticated, privyUser, getAccessToken])
 
   // This effect fetches or creates the user profile
   useEffect(() => {
@@ -95,6 +95,11 @@ export function useUser() {
           privyUser?.google?.name ||
           privyUser?.twitter?.name ||
           privyUser?.github?.name ||
+          null,
+        avatar_url:
+          privyUser?.google?.picture ||
+          privyUser?.twitter?.profile_image_url_https ||
+          privyUser?.github?.avatar_url ||
           null,
         created_at: new Date().toISOString(),
       }

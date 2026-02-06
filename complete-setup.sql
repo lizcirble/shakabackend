@@ -4,7 +4,7 @@
 -- Create profiles table
 CREATE TABLE IF NOT EXISTS profiles (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  privy_id TEXT UNIQUE NOT NULL,
+  auth_id TEXT UNIQUE NOT NULL,
   email TEXT,
   full_name TEXT,
   avatar_url TEXT,
@@ -114,7 +114,7 @@ FOR SELECT USING (true);
 
 DROP POLICY IF EXISTS "Allow public insert task_assignments" ON task_assignments;
 CREATE POLICY "Allow public insert task_assignments" ON task_assignments
-FOR INSERT WITH CHECK (true);
+FOR INSERT WITH CHECK (worker_id = (SELECT id FROM profiles WHERE auth_id = auth.uid()::text));
 
 DROP POLICY IF EXISTS "Allow worker to update own task_assignment status" ON task_assignments;
 CREATE POLICY "Allow worker to update own task_assignment status" ON task_assignments

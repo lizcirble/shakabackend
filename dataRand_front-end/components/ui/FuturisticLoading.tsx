@@ -5,6 +5,13 @@ interface FuturisticLoadingProps {
 }
 
 export function FuturisticLoading({ message = "Fetching data..." }: FuturisticLoadingProps) {
+  const [randomValues] = React.useState(() =>
+    Array.from({ length: 12 }).map(() => ({
+      height: Math.random() * 24 + 8,
+      duration: 0.8 + Math.random() * 0.4,
+    }))
+  );
+
   return (
     <div className="flex flex-col items-center justify-center p-6 space-y-4">
       {/* Animated circles with glow effect */}
@@ -59,21 +66,17 @@ export function FuturisticLoading({ message = "Fetching data..." }: FuturisticLo
       
       {/* Data stream effect with enhanced animation */}
       <div className="flex space-x-1 opacity-70">
-        {Array.from({ length: 12 }).map((_, i) => {
-          const height = React.useMemo(() => `${Math.random() * 24 + 8}px`, []);
-          const animationDuration = React.useMemo(() => `${0.8 + Math.random() * 0.4}s`, []);
-          return (
-            <div
-              key={i}
-              className="w-0.5 bg-gradient-to-t from-transparent via-primary to-transparent animate-pulse shadow-sm shadow-primary/30"
-              style={{
-                height: height,
-                animationDelay: `${i * 80}ms`,
-                animationDuration: animationDuration
-              }}
-            ></div>
-          );
-        })}
+        {randomValues.map((values, i) => (
+          <div
+            key={i}
+            className="w-0.5 bg-gradient-to-t from-transparent via-primary to-transparent animate-pulse shadow-sm shadow-primary/30"
+            style={{
+              height: `${values.height}px`,
+              animationDelay: `${i * 80}ms`,
+              animationDuration: `${values.duration}s`
+            }}
+          ></div>
+        ))}
       </div>
       
       {/* Scanning line effect */}

@@ -47,7 +47,9 @@ export function DeviceToggleCard({
   useEffect(() => {
     if (!isEnabled) {
       // Reset usage when disabled
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setCpuUsage(0);
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setMemoryUsage(0);
       return;
     }

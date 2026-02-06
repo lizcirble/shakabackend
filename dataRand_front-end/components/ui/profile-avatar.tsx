@@ -45,6 +45,7 @@ export function ProfileAvatar({
   useEffect(() => {
     const storedAvatar = localStorage.getItem("avatar");
     if (storedAvatar !== null) { // Explicitly check for null
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setAvatarSrc(storedAvatar);
     }
   }, []);
