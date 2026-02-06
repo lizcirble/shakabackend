@@ -30,7 +30,13 @@ export function SupabaseTestPanel() {
       setResults(diagnostic);
     } catch (error) {
       console.error("Test failed:", error);
-      setResults({ error: error instanceof Error ? error.message : "Unknown error" });
+      setResults({ 
+        environment: false,
+        connection: false,
+        tasksTable: false,
+        taskTypesTable: false,
+        error: error instanceof Error ? error.message : "Unknown error" 
+      });
     } finally {
       setLoading(false);
     }

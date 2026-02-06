@@ -607,12 +607,12 @@ function AssignmentGrid({
         return (
           <Card key={assignment.id} className="border-border/50 hover:border-primary/30 transition-all duration-200 hover:shadow-lg">
             <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <Badge variant="outline" className={`${status.color} border-current`}>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <Badge variant="outline" className={`${status.color} border-current w-fit`}>
                   <StatusIcon className="h-3 w-3 mr-1" />
-                  {status.label}
+                  <span className="text-xs">{status.label}</span>
                 </Badge>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   <Badge variant="secondary" className="text-xs">
                     {assignment.task?.task_type?.name || "Unknown"}
                   </Badge>
