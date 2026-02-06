@@ -75,7 +75,7 @@ export type TaskAssignment = {
 
 export type Notification = {
   id: string;
-  user_email: string;
+  user_id: string;
   type: "task_available" | "task_approved" | "task_rejected" | "pending_review" | "payment" | "system";
   title: string;
   message: string | null;
