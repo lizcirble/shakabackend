@@ -96,11 +96,7 @@ export function useUser() {
           privyUser?.twitter?.name ||
           privyUser?.github?.name ||
           null,
-        avatar_url:
-          privyUser?.google?.picture ||
-          privyUser?.twitter?.profile_image_url_https ||
-          privyUser?.github?.avatar_url ||
-          null,
+        avatar_url: null, // Profile pictures will be managed in Supabase
         created_at: new Date().toISOString(),
       }
 
