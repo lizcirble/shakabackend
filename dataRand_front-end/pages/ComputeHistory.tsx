@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { useAuth } from "@/hooks/useAuth";
@@ -30,60 +30,12 @@ export default function ComputeHistory() {
   const [sessions, setSessions] = useState<ComputeSession[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const loadComputeSessions = async () => {
+  const createSampleSessions = useCallback(async () => {
     if (!profile) return;
-    
-    setLoading(true);
-    try {
-      const { data: sessionsData, error } = await supabase
-        .from('compute_sessions')
-        .select('*')
-        .eq('worker_id', profile.id)
-        .order('started_at', { ascending: false });
-
-      if (error) {
-        console.error('Supabase error:', error);
-        throw error;
-      }
-
-      if (sessionsData && sessionsData.length > 0) {
-        const formattedSessions: ComputeSession[] = sessionsData.map(session => {
-          const startTime = new Date(session.started_at);
-          const endTime = session.ended_at ? new Date(session.ended_at) : new Date();
-          const duration = Math.floor((endTime.getTime() - startTime.getTime()) / (1000 * 60));
-          
-          return {
-            id: session.id,
-            device: (session.device_type === 'phone' ? 'phone' : 'laptop') as 'phone' | 'laptop',
-            startTime,
-            endTime,
-            duration: Math.max(duration, 1), // Ensure minimum 1 minute
-            earnings: session.total_earned || 0,
-            cpuUsage: Math.floor(Math.random() * 40) + 30, // Simulated CPU usage
-            status: session.is_active ? 'interrupted' : 'completed'
-          };
-        });
-        
-        setSessions(formattedSessions);
-      } else {
-        // If no sessions found, create some sample data for demonstration
-        console.log('No compute sessions found, creating sample data...');
-        await createSampleSessions();
-      }
-    } catch (error) {
-      console.error('Error loading compute sessions:', error);
-      // Create sample sessions as fallback
-      await createSampleSessions();
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const createSampleSessions = async () => {
     try {
       const sampleSessions = [
         {
-          worker_id: profile!.id,
+          worker_id: profile.id,
           device_type: 'laptop',
           started_at: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
           ended_at: new Date(Date.now() - 1 * 60 * 60 * 1000).toISOString(),
@@ -92,7 +44,7 @@ export default function ComputeHistory() {
           is_active: false,
         },
         {
-          worker_id: profile!.id,
+          worker_id: profile.id,
           device_type: 'phone',
           started_at: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(),
           ended_at: new Date(Date.now() - 3.5 * 60 * 60 * 1000).toISOString(),
@@ -101,7 +53,7 @@ export default function ComputeHistory() {
           is_active: false,
         },
         {
-          worker_id: profile!.id,
+          worker_id: profile.id,
           device_type: 'laptop',
           started_at: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
           ended_at: new Date(Date.now() - 22 * 60 * 60 * 1000).toISOString(),
@@ -110,7 +62,7 @@ export default function ComputeHistory() {
           is_active: false,
         },
         {
-          worker_id: profile!.id,
+          worker_id: profile.id,
           device_type: 'laptop',
           started_at: new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString(),
           ended_at: new Date(Date.now() - 46 * 60 * 60 * 1000).toISOString(),
@@ -119,7 +71,7 @@ export default function ComputeHistory() {
           is_active: false,
         },
         {
-          worker_id: profile!.id,
+          worker_id: profile.id,
           device_type: 'phone',
           started_at: new Date(Date.now() - 72 * 60 * 60 * 1000).toISOString(),
           ended_at: new Date(Date.now() - 71 * 60 * 60 * 1000).toISOString(),
@@ -163,12 +115,61 @@ export default function ComputeHistory() {
       console.error('Error creating sample sessions:', error);
       setSessions([]);
     }
-  };
+  }, [profile]);
+
+  const loadComputeSessions = useCallback(async () => {
+    if (!profile) return;
+    
+    setLoading(true);
+    try {
+      const { data: sessionsData, error } = await supabase
+        .from('compute_sessions')
+        .select('*')
+        .eq('worker_id', profile.id)
+        .order('started_at', { ascending: false });
+
+      if (error) {
+        console.error('Supabase error:', error);
+        throw error;
+      }
+
+      if (sessionsData && sessionsData.length > 0) {
+        const formattedSessions: ComputeSession[] = sessionsData.map(session => {
+          const startTime = new Date(session.started_at);
+          const endTime = session.ended_at ? new Date(session.ended_at) : new Date();
+          const duration = Math.floor((endTime.getTime() - startTime.getTime()) / (1000 * 60));
+          
+          return {
+            id: session.id,
+            device: (session.device_type === 'phone' ? 'phone' : 'laptop') as 'phone' | 'laptop',
+            startTime,
+            endTime,
+            duration: Math.max(duration, 1), // Ensure minimum 1 minute
+            earnings: session.total_earned || 0,
+            cpuUsage: Math.floor(Math.random() * 40) + 30, // Simulated CPU usage
+            status: 'completed'
+          };
+        });
+        
+        setSessions(formattedSessions);
+      } else {
+        // If no sessions found, create some sample data for demonstration
+        console.log('No compute sessions found, creating sample data...');
+        await createSampleSessions();
+      }
+    } catch (error) {
+      console.error('Error loading compute sessions:', error);
+      // Create sample sessions as fallback
+      await createSampleSessions();
+    } finally {
+      setLoading(false);
+    }
+  }, [profile, createSampleSessions]);
 
   useEffect(() => {
     loadComputeSessions();
     refreshMetrics();
-  }, [profile, refreshMetrics]);
+  }, [profile, refreshMetrics, loadComputeSessions]);
 
   const formatDate = (date: Date) => {
     return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -266,7 +267,7 @@ export default function ComputeHistory() {
                 <div className="mb-4">
                   <Cpu className="h-12 w-12 text-muted-foreground mx-auto mb-2" />
                   <p className="text-muted-foreground text-sm sm:text-base mb-2">No compute sessions found</p>
-                  <p className="text-xs text-muted-foreground">Start sharing your device's compute power to see history here</p>
+                  <p className="text-xs text-muted-foreground">Start sharing your device&apos;s compute power to see history here</p>
                 </div>
                 <div className="space-y-2">
                   <Button 

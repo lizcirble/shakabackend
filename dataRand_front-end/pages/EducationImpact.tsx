@@ -328,45 +328,44 @@ export default function EducationImpact() {
                     </div>
                     <div>
                       <p className="font-medium">100% Direct Impact</p>
-                      <p className="text-sm text-muted-foreground">
-                        Every dollar goes directly to education programs - no overhead
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex gap-3">
-                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-secondary/10 text-secondary font-bold">
-                      2
-                    </div>
-                    <div>
-                      <p className="font-medium">Verified Partners</p>
-                      <p className="text-sm text-muted-foreground">
-                        We work with established schools and NGOs in Africa & India
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex gap-3">
-                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-secondary/10 text-secondary font-bold">
-                      3
-                    </div>
-                    <div>
-                      <p className="font-medium">Transparent Tracking</p>
-                      <p className="text-sm text-muted-foreground">
-                        See exactly where funds go and the impact they create
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex gap-3">
-                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-secondary/10 text-secondary font-bold">
-                      4
-                    </div>
-                    <div>
-                      <p className="font-medium">Break the Cycle</p>
-                      <p className="text-sm text-muted-foreground">
-                        Education is the most effective way to break the poverty cycle
-                      </p>
-                    </div>
-                  </div>
-                </CardContent>
+                                        <p className="text-sm text-muted-foreground">
+                                          Every dollar goes directly to education programs - no overhead
+                                        </p>
+                                      </div>
+                                    </div>
+                                    <div className="flex gap-3">
+                                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-secondary/10 text-secondary font-bold">
+                                        2
+                                      </div>
+                                      <div>
+                                        <p className="font-medium">Verified Partners</p>
+                                        <p className="text-sm text-muted-foreground">
+                                          We work with established schools and NGOs in Africa &amp; India
+                                        </p>
+                                      </div>
+                                    </div>
+                                    <div className="flex gap-3">
+                                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-secondary/10 text-secondary font-bold">
+                                        3
+                                      </div>
+                                      <div>
+                                        <p className="font-medium">Transparent Tracking</p>
+                                        <p className="text-sm text-muted-foreground">
+                                          See exactly where funds go and the impact they create
+                                        </p>
+                                      </div>
+                                    </div>
+                                    <div className="flex gap-3">
+                                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-secondary/10 text-secondary font-bold">
+                                        4
+                                      </div>
+                                      <div>
+                                        <p className="font-medium">Break the Cycle</p>
+                                        <p className="text-sm text-muted-foreground">
+                                          Education is the most effective way to break the poverty cycle
+                                        </p>
+                                      </div>
+                                    </div>                </CardContent>
               </Card>
             </div>
           </TabsContent>

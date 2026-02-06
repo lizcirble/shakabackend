@@ -151,7 +151,7 @@ export function DailyImpactCard() {
           <p className="text-sm font-medium text-primary mb-1">Current Impact</p>
           <p className="text-xs text-muted-foreground">
             Your contributions today are helping improve speech recognition for African accents 
-            and supporting {studentsImpacted} students' educational journey.
+            and supporting {studentsImpacted} students&apos; educational journey.
           </p>
         </div>
       </CardContent>

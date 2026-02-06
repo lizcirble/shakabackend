@@ -89,8 +89,8 @@ export async function setupSampleData() {
     console.log("Sample data setup complete!");
     return { success: true };
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Setup error:", error);
-    return { success: false, error: error.message };
+    return { success: false, error: error instanceof Error ? error.message : "An unknown error occurred" };
   }
 }

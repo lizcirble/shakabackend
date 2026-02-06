@@ -7,8 +7,17 @@ import { Badge } from "@/components/ui/badge";
 import { SupabaseDebugger } from "@/lib/supabase-debug";
 import { setupSampleData } from "@/lib/setup-data";
 
+interface SupabaseDiagnosticResults {
+  environment: boolean;
+  connection: boolean;
+  tasksTable: boolean;
+  taskTypesTable: boolean;
+  sampleDataSetup?: string;
+  error?: string;
+}
+
 export function SupabaseTestPanel() {
-  const [results, setResults] = useState<any>(null);
+  const [results, setResults] = useState<SupabaseDiagnosticResults | null>(null);
   const [loading, setLoading] = useState(false);
   const [setupLoading, setSetupLoading] = useState(false);
 

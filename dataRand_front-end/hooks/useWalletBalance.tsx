@@ -10,11 +10,13 @@ export function useWalletBalance(chainId?: number) {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     setMounted(true);
   }, []);
 
   useEffect(() => {
     if (wallets.length > 0) {
+      // eslint-disable-next-line react-hooks/exhaustive-deps
       setAddress(wallets[0].address);
     }
   }, [wallets]);

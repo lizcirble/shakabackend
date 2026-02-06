@@ -46,6 +46,7 @@ export function DeviceToggleCard({
   // Simulate live resource usage when active
   useEffect(() => {
     if (!isEnabled) {
+      // Reset usage when disabled
       setCpuUsage(0);
       setMemoryUsage(0);
       return;
@@ -172,7 +173,7 @@ export function DeviceToggleCard({
                   </div>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Real-time view of your device's contribution when compute sharing is active.
+                  Real-time view of your device&apos;s contribution when compute sharing is active.
                 </p>
               </div>
             )}

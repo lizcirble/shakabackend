@@ -40,6 +40,7 @@ export default function ComputeShare() {
 
   useEffect(() => {
     const stored = localStorage.getItem('computeShare_howItWorksViewed');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     setHowItWorksOpen(stored !== 'true');
   }, []);
 
@@ -96,6 +97,7 @@ export default function ComputeShare() {
     const laptopEarnings = laptopState.isActive ? laptopState.sessionMinutes * 0.001 : 0;
     const totalSession = phoneEarnings + laptopEarnings;
     
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     setStats(prev => ({
       ...prev,
       sessionEarned: totalSession,

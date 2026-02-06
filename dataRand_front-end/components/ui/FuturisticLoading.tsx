@@ -59,17 +59,21 @@ export function FuturisticLoading({ message = "Fetching data..." }: FuturisticLo
       
       {/* Data stream effect with enhanced animation */}
       <div className="flex space-x-1 opacity-70">
-        {Array.from({ length: 12 }).map((_, i) => (
-          <div
-            key={i}
-            className="w-0.5 bg-gradient-to-t from-transparent via-primary to-transparent animate-pulse shadow-sm shadow-primary/30"
-            style={{
-              height: `${Math.random() * 24 + 8}px`,
-              animationDelay: `${i * 80}ms`,
-              animationDuration: `${0.8 + Math.random() * 0.4}s`
-            }}
-          ></div>
-        ))}
+        {Array.from({ length: 12 }).map((_, i) => {
+          const height = React.useMemo(() => `${Math.random() * 24 + 8}px`, []);
+          const animationDuration = React.useMemo(() => `${0.8 + Math.random() * 0.4}s`, []);
+          return (
+            <div
+              key={i}
+              className="w-0.5 bg-gradient-to-t from-transparent via-primary to-transparent animate-pulse shadow-sm shadow-primary/30"
+              style={{
+                height: height,
+                animationDelay: `${i * 80}ms`,
+                animationDuration: animationDuration
+              }}
+            ></div>
+          );
+        })}
       </div>
       
       {/* Scanning line effect */}

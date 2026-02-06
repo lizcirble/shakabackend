@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, createContext, useContext, ReactNode } from "react";
+import { useState, useEffect, createContext, useContext, ReactNode, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./useAuth";
 
@@ -59,8 +59,7 @@ export function GlobalMetricsProvider({ children }: { children: ReactNode }) {
     activeComputeSession: false,
   });
 
-  // Load real data from Supabase
-  const loadMetricsFromDatabase = async () => {
+  const loadMetricsFromDatabase = useCallback(async () => {
     if (!profile) return;
 
     try {
@@ -113,12 +112,12 @@ export function GlobalMetricsProvider({ children }: { children: ReactNode }) {
         }
       }
     }
-  };
+  }, [profile]);
 
   // Load from database on mount and when profile changes
   useEffect(() => {
     loadMetricsFromDatabase();
-  }, [profile]);
+  }, [profile, loadMetricsFromDatabase]);
 
   // Load from localStorage on mount (fallback)
   useEffect(() => {
@@ -126,6 +125,7 @@ export function GlobalMetricsProvider({ children }: { children: ReactNode }) {
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
         setMetrics(prev => ({ ...prev, ...parsed }));
       } catch (e) {
         console.error('Failed to parse saved metrics:', e);

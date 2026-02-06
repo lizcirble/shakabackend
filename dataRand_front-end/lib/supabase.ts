@@ -68,6 +68,7 @@ export type TaskAssignment = {
   started_at: string;
   submitted_at: string | null;
   reviewed_at: string | null;
+  client_feedback: string | null; // Added client_feedback
   task?: Task;
 };
 

@@ -94,7 +94,7 @@ function ProfilePageContent() {
                 <FileText className="h-5 w-5" /> My Created Tasks
               </CardTitle>
               <CardDescription>
-                Tasks you've created for the community
+                Tasks you&apos;ve created for the community
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -142,7 +142,7 @@ function ProfilePageContent() {
             <p className="text-muted-foreground text-sm sm:text-base">Your current skill tier is:</p>
             <Badge className="text-base sm:text-lg px-3 py-1" variant="secondary">Beginner</Badge>
             <p className="text-xs sm:text-sm text-muted-foreground">
-              Complete more tasks accurately to advance to 'Verified' and 'Expert' tiers, unlocking higher-value work.
+              Complete more tasks accurately to advance to &apos;Verified&apos; and &apos;Expert&apos; tiers, unlocking higher-value work.
             </p>
           </CardContent>
         </Card>

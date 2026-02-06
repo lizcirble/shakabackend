@@ -4,15 +4,15 @@ import { supabase } from "@/integrations/supabase/client";
 export class SupabaseDebugger {
   private static logPrefix = "[SUPABASE DEBUG]";
 
-  static log(message: string, data?: any) {
+  static log(message: string, data?: unknown) {
     console.log(`${this.logPrefix} ${message}`, data || "");
   }
 
-  static error(message: string, error?: any) {
+  static error(message: string, error?: unknown) {
     console.error(`${this.logPrefix} ERROR: ${message}`, error || "");
   }
 
-  static warn(message: string, data?: any) {
+  static warn(message: string, data?: unknown) {
     console.warn(`${this.logPrefix} WARNING: ${message}`, data || "");
   }
 

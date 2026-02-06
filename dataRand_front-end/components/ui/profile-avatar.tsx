@@ -44,7 +44,7 @@ export function ProfileAvatar({
 
   useEffect(() => {
     const storedAvatar = localStorage.getItem("avatar");
-    if (storedAvatar) {
+    if (storedAvatar !== null) { // Explicitly check for null
       setAvatarSrc(storedAvatar);
     }
   }, []);
