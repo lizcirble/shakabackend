@@ -1,0 +1,16 @@
+{
+  "$schema": "https://railway.com.br/schema.json",
+  "build": {
+    "builder": "NIXPACKS",
+    "nixpacks": {
+      "plan": "nodejs"
+    }
+  },
+  "deploy": {
+    "startCommand": "node src/index.js",
+    "healthcheckPath": "/health",
+    "healthcheckTimeout": 10,
+    "restartPolicy": "ON_FAILURE",
+    "restartLimit": 3
+  }
+}
