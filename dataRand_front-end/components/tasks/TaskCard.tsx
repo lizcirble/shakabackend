@@ -61,7 +61,6 @@ export function TaskCard({ task, onAccept, showAccept = true }: TaskCardProps) {
         <div className="absolute bottom-0 right-0 w-full h-0.5 bg-gradient-to-l from-transparent via-primary to-transparent animate-pulse" style={{ animationDelay: '0.3s' }} />
       </div>
 
-      {/* Holographic corner accents */}
       <div className="absolute top-0 left-0 w-8 h-8 opacity-0 group-hover:opacity-30 transition-all duration-500 transform group-hover:scale-110">
         <div className="absolute top-2 left-2 w-4 h-0.5 bg-primary" />
         <div className="absolute top-2 left-2 w-0.5 h-4 bg-primary" />
