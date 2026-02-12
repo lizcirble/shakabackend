@@ -2,7 +2,10 @@ app = "datarand-backend"
 primary_region = "lax"
 
 [build]
-  builder = "paketobuildpacks/builder:nodejs"
+  dockerfile = "Dockerfile"
+
+[env]
+  PORT = "8080"
 
 [deploy]
   release_command = ""
