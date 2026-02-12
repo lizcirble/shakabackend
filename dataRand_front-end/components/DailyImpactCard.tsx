@@ -71,7 +71,6 @@ export function DailyImpactCard() {
           </div>
         </div>
 
-        {/* Overall Progress */}
         <div>
           <h3 className="text-sm font-semibold text-muted-foreground mb-3 flex items-center gap-2">
             <TrendingUp className="h-4 w-4" />
