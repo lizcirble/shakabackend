@@ -3,7 +3,7 @@
   "build": {
     "builder": "NIXPACKS",
     "nixpacks": {
-      "plan": "nodejs"
+      "plan": "nodejs-pnpm"
     }
   },
   "deploy": {
@@ -11,6 +11,8 @@
     "healthcheckPath": "/health",
     "healthcheckTimeout": 10,
     "restartPolicy": "ON_FAILURE",
-    "restartLimit": 3
+    "restartLimit": 3,
+    "numReplicas": 1,
+    "sleep": "noreplica"
   }
 }
