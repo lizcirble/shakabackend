@@ -19,6 +19,7 @@ const config = {
         deployerPrivateKey: process.env.DEPLOYER_PRIVATE_KEY,
         escrowContractAddress: process.env.TASK_ESCROW_CONTRACT_ADDRESS,
         platformWalletAddress: process.env.PLATFORM_WALLET_ADDRESS,
+        jsonRpcProvider: process.env.JSON_RPC_PROVIDER,
     },
     redis: {
         url: process.env.UPSTASH_REDIS_REST_URL,

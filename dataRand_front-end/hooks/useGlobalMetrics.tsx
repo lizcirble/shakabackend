@@ -163,9 +163,9 @@ export function GlobalMetricsProvider({ children }: { children: ReactNode }) {
     }));
   };
 
-  const refreshMetrics = () => {
+  const refreshMetrics = useCallback(() => {
     loadMetricsFromDatabase();
-  };
+  }, [loadMetricsFromDatabase]);
 
   const addComputeSession = async (minutes: number, earnings: number, deviceType?: 'phone' | 'laptop') => {
     if (!profile) return;

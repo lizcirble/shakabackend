@@ -18,7 +18,7 @@ interface ComputeSession {
   endTime: Date;
   duration: number; // minutes
   earnings: number;
-  cpuUsage: number;
+  cpuUsage: number | null;
   status: 'completed' | 'interrupted';
 }
 
@@ -58,7 +58,7 @@ export default function ComputeHistory() {
             endTime,
             duration: Math.max(duration, 1), // Ensure minimum 1 minute
             earnings: session.total_earned || 0,
-            cpuUsage: Math.floor(Math.random() * 40) + 30, // Simulated CPU usage
+            cpuUsage: null,
             status: 'completed'
           };
         });
@@ -222,7 +222,7 @@ export default function ComputeHistory() {
                           </span>
                           <span className="flex items-center gap-1">
                             <Cpu className="h-3 w-3 flex-shrink-0" />
-                            {session.cpuUsage}% avg
+                            {session.cpuUsage !== null ? `${session.cpuUsage}% avg` : "N/A"}
                           </span>
                         </div>
                       </div>

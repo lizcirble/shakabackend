@@ -30,8 +30,8 @@ const validateTaskInput = (taskData, creator) => {
         throw new ApiError(400, 'At least one worker is required.');
     }
 
-    // First-time creator caps
-    if (creator.is_first_task) {
+    // First-time creator caps - only if the column exists
+    if (creator.is_first_task === true || creator.is_first_task === 'true') {
         if (requiredWorkers > 10) {
             throw new ApiError(400, 'First-time creators are limited to 10 workers.');
         }

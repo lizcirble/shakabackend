@@ -35,18 +35,19 @@ const DataRandContext = createContext(null);
 // ============================================
 
 class DataRandAPI {
-  constructor(baseUrl = CONFIG.API_BASE_URL) {
+  baseUrl: string;
+  constructor(baseUrl: string = CONFIG.API_BASE_URL) {
     this.baseUrl = baseUrl;
   }
 
-  getToken() {
+  private getToken(): string | null {
     if (typeof window !== 'undefined') {
       return localStorage.getItem('datarand_token');
     }
     return null;
   }
 
-  async request(endpoint, options = {}) {
+  private async request(endpoint: string, options: RequestInit = {}): Promise<any> {
     const url = `${this.baseUrl}${endpoint}`;
     const token = this.getToken();
     const headers = {
@@ -67,7 +68,7 @@ class DataRandAPI {
   }
 
   // Auth
-  async login(privyAccessToken, deviceFingerprint) {
+  async login(privyAccessToken: string, deviceFingerprint: string): Promise<any> {
     return this.request('/auth/login', {
       method: 'POST',
       body: JSON.stringify({ privyAccessToken, deviceFingerprint }),
@@ -79,14 +80,14 @@ class DataRandAPI {
   }
 
   // Tasks
-  async createTask(taskData) {
+  async createTask(taskData: any): Promise<any> {
     return this.request('/tasks', {
       method: 'POST',
       body: JSON.stringify(taskData),
     });
   }
 
-  async fundTask(taskId) {
+  async fundTask(taskId: string): Promise<any> {
     return this.request(`/tasks/${taskId}/fund`, {
       method: 'POST',
     });
@@ -96,7 +97,7 @@ class DataRandAPI {
     return this.request('/tasks');
   }
 
-  async getTask(taskId) {
+  async getTask(taskId: string): Promise<any> {
     return this.request(`/tasks/${taskId}`);
   }
 
@@ -105,18 +106,18 @@ class DataRandAPI {
   }
 
   // Submissions
-  async submitWork(submissionData) {
+  async submitWork(submissionData: any): Promise<any> {
     return this.request('/submissions', {
       method: 'POST',
       body: JSON.stringify(submissionData),
     });
   }
 
-  async getTaskSubmissions(taskId) {
+  async getTaskSubmissions(taskId: string): Promise<any> {
     return this.request(`/submissions/task/${taskId}`);
   }
 
-  async reviewSubmission(submissionId, approved) {
+  async reviewSubmission(submissionId: string, approved: boolean): Promise<any> {
     return this.request(`/submissions/${submissionId}/review`, {
       method: 'POST',
       body: JSON.stringify({ approved }),

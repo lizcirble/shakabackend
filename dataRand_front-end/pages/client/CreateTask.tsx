@@ -357,7 +357,7 @@ export default function CreateTask() {
         
         {/* Step Indicator */}
         <div className="flex items-center justify-center gap-2 sm:gap-4 mb-6 overflow-x-auto">
-          <div className={`flex items-center gap-2 ${step === "create" ? "text-primary" : step !== "create" ? "text-green-600" : "text-muted-foreground"}`}>
+          <div className={`flex items-center gap-2 ${step === "create" || step === "fund" ? "text-primary" : step === "complete" ? "text-green-600" : "text-muted-foreground"}`}>
             <div className={`w-8 h-8 rounded-full flex items-center justify-center ${step === "create" ? "bg-primary text-white" : "bg-green-600 text-white"}`}>
               {step === "create" ? "1" : <CheckCircle className="w-5 h-5" />}
             </div>

@@ -67,9 +67,12 @@ const findUserByPrivyDid = async (privyDid) => {
  * @returns {Promise<object>} The newly created user object.
  */
 const createNewUser = async (privyUser) => {
+    const walletAddress = privyUser.wallet?.address || null;
+    
     const newUser = {
         id: uuidv4(),
         privy_did: privyUser.userId,
+        wallet_address: walletAddress,
         // Additional fields can be populated from privyUser if needed
         // e.g., email: privyUser.email?.address
     };

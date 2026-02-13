@@ -6,10 +6,10 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import { useAuth } from "@/hooks/useAuth";
 import { useComputeDevices } from "@/hooks/useComputeDevices";
 import { supabase } from "@/lib/supabase";
+import { useWalletBalance } from "@/hooks/useWalletBalance";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { useToast } from "@/hooks/use-toast";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { ComputeIcon, EducationIcon, EarningsIcon, GlobalSouthIcon, TrendingIcon } from "@/components/icons/DataRandIcons";
 import { ChevronDown, Heart } from "lucide-react";
@@ -18,17 +18,19 @@ import { DeviceToggleCard } from "@/components/compute/DeviceToggleCard";
 
 const COST_PER_CHILD = 13;
 const OUT_OF_SCHOOL_CHILDREN = 98000000;
+const ARBITRUM_SEPOLIA_CHAIN_ID = 421614;
 
 export default function ComputeShare() {
   const { profile, loading: authLoading } = useAuth();
   const { phoneState, laptopState, loading: devicesLoading, toggling, toggleDevice, currentDevice } = useComputeDevices();
   const router = useRouter();
-  const { toast } = useToast();
+  const { balance: walletBalance, symbol: walletSymbol } = useWalletBalance(ARBITRUM_SEPOLIA_CHAIN_ID);
   
   const [stats, setStats] = useState({
     totalEarned: 0,
     sessionEarned: 0,
-    educationContribution: 0
+    educationContribution: 0,
+    earningsRate: 0
   });
   
   const [globalStats, setGlobalStats] = useState({
@@ -50,25 +52,30 @@ export default function ComputeShare() {
     }
   }, [authLoading, profile, router]);
 
-  // Fetch initial stats
+  // Fetch real persisted compute stats from DB.
   useEffect(() => {
     if (!profile) return;
     
     const fetchStats = async () => {
       try {
-        // Fetch user's compute earnings
-        const { data: profileData } = await supabase
-          .from("profiles")
-          .select("compute_earnings")
-          .eq("id", profile.id)
-          .maybeSingle();
-          
-        if (profileData) {
-          setStats(prev => ({
-            ...prev,
-            totalEarned: Number(profileData.compute_earnings) || 0
-          }));
-        }
+        const { data: sessionsData } = await supabase
+          .from("compute_sessions")
+          .select("total_earned, earnings_rate")
+          .eq("worker_id", profile.id)
+          .order("started_at", { ascending: false });
+
+        const totalEarned = (sessionsData || []).reduce(
+          (sum, session) => sum + Number(session.total_earned || 0),
+          0
+        );
+        const latestRate = Number(sessionsData?.[0]?.earnings_rate || 0);
+
+        setStats(prev => ({
+          ...prev,
+          totalEarned,
+          earningsRate: latestRate,
+          educationContribution: totalEarned * 0.15
+        }));
 
         // Fetch global education stats
         const { data: eduStats } = await supabase
@@ -89,40 +96,30 @@ export default function ComputeShare() {
     };
     
     fetchStats();
+    const interval = setInterval(fetchStats, 15000);
+    return () => clearInterval(interval);
   }, [profile]);
 
-  // Calculate session earnings from active devices
+  // Live session estimate based on persisted earnings rate.
   useEffect(() => {
-    const phoneEarnings = phoneState.isActive ? phoneState.sessionMinutes * 0.001 : 0;
-    const laptopEarnings = laptopState.isActive ? laptopState.sessionMinutes * 0.001 : 0;
+    const phoneEarnings = phoneState.isActive ? phoneState.sessionMinutes * stats.earningsRate : 0;
+    const laptopEarnings = laptopState.isActive ? laptopState.sessionMinutes * stats.earningsRate : 0;
     const totalSession = phoneEarnings + laptopEarnings;
-    
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+
     setStats(prev => ({
       ...prev,
-      sessionEarned: totalSession,
-      educationContribution: totalSession * 0.15
+      sessionEarned: totalSession
     }));
-  }, [phoneState.isActive, phoneState.sessionMinutes, laptopState.isActive, laptopState.sessionMinutes]);
+  }, [
+    phoneState.isActive,
+    phoneState.sessionMinutes,
+    laptopState.isActive,
+    laptopState.sessionMinutes,
+    stats.earningsRate
+  ]);
 
   const handleToggleDevice = async (device: 'phone' | 'laptop') => {
     await toggleDevice(device);
-    
-    // Refresh stats after toggle
-    if (profile) {
-      const { data: profileData } = await supabase
-        .from("profiles")
-        .select("compute_earnings")
-        .eq("id", profile.id)
-        .maybeSingle();
-        
-      if (profileData) {
-        setStats(prev => ({
-          ...prev,
-          totalEarned: Number(profileData.compute_earnings) || 0
-        }));
-      }
-    }
   };
 
   // Collapse "How it works" after viewing
@@ -221,10 +218,12 @@ export default function ComputeShare() {
             </CardHeader>
             <CardContent>
               <p className="text-3xl font-display font-bold text-primary">
-                ${stats.sessionEarned.toFixed(4)}
+                {stats.sessionEarned.toFixed(6)} {walletSymbol}
               </p>
               <p className="text-xs text-muted-foreground mt-1">
-                $0.001/min while active
+                {stats.earningsRate > 0
+                  ? `${stats.earningsRate.toFixed(6)} ${walletSymbol}/min (DB rate)`
+                  : "Rate unavailable until first settled session"}
               </p>
             </CardContent>
           </Card>
@@ -238,10 +237,10 @@ export default function ComputeShare() {
             </CardHeader>
             <CardContent>
               <p className="text-3xl font-display font-bold">
-                ${stats.totalEarned.toFixed(4)}
+                {Number(walletBalance || 0).toFixed(6)} {walletSymbol}
               </p>
               <p className="text-xs text-muted-foreground mt-1">
-                Lifetime compute earnings
+                Live Arbitrum Sepolia wallet balance
               </p>
             </CardContent>
           </Card>
@@ -255,10 +254,10 @@ export default function ComputeShare() {
             </CardHeader>
             <CardContent>
               <p className="text-3xl font-display font-bold text-secondary">
-                ${stats.educationContribution.toFixed(4)}
+                {stats.educationContribution.toFixed(6)} {walletSymbol}
               </p>
               <p className="text-xs text-muted-foreground mt-1">
-                15% of earnings fund education
+                15% of settled compute earnings
               </p>
             </CardContent>
           </Card>
