@@ -27,13 +27,18 @@ const loginOrRegister = asyncHandler(async (req, res) => {
     // 3. Update device fingerprint
     // This is a simplified implementation. A real-world scenario would involve
     // more complex logic to handle multiple devices and prevent Sybil attacks.
+    const targetTable = user.source_table === 'profiles' ? 'profiles' : 'users';
+    const updatePayload = targetTable === 'profiles'
+        ? { updated_at: new Date().toISOString() }
+        : { last_fingerprint: deviceFingerprint, last_login_at: new Date() };
+
     const { error: updateError } = await supabase
-        .from('users')
-        .update({ last_fingerprint: deviceFingerprint, last_login_at: new Date() })
+        .from(targetTable)
+        .update(updatePayload)
         .eq('id', user.id);
 
     if (updateError) {
-        logger.error(`Failed to update device fingerprint: ${updateError.message}`);
+        logger.error(`Failed to update login metadata on ${targetTable}: ${updateError.message}`);
         // Non-critical error, so we only log it and continue.
     }
 

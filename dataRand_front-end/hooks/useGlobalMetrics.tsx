@@ -28,7 +28,7 @@ interface GlobalMetrics {
   incrementTasksCompleted: () => void;
   addEarnings: (amount: number) => void;
   addDataProcessed: (gb: number) => void;
-  addComputeSession: (minutes: number, earnings: number) => void;
+  addComputeSession: (minutes: number, earnings: number, deviceType?: 'phone' | 'laptop') => void;
   updateCpuUsage: (usage: number) => void;
   setActiveSession: (active: boolean) => void;
   refreshMetrics: () => void;
@@ -167,7 +167,7 @@ export function GlobalMetricsProvider({ children }: { children: ReactNode }) {
     loadMetricsFromDatabase();
   };
 
-  const addComputeSession = async (minutes: number, earnings: number) => {
+  const addComputeSession = async (minutes: number, earnings: number, deviceType?: 'phone' | 'laptop') => {
     if (!profile) return;
 
     try {
@@ -179,16 +179,26 @@ export function GlobalMetricsProvider({ children }: { children: ReactNode }) {
           started_at: new Date(Date.now() - minutes * 60 * 1000).toISOString(),
           ended_at: new Date().toISOString(),
           total_earned: earnings,
-          earnings_rate: earnings / minutes,
+          earnings_rate: earnings / Math.max(minutes, 1),
+          device_type: deviceType || null,
           is_active: false,
         });
 
-      // Update profile earnings
+      // Update profile earnings with current persisted totals.
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('compute_earnings, total_earnings')
+        .eq('id', profile.id)
+        .single();
+
+      const currentComputeEarnings = Number(profileData?.compute_earnings || 0);
+      const currentTotalEarnings = Number(profileData?.total_earnings || 0);
+
       await supabase
         .from('profiles')
         .update({
-          compute_earnings: (metrics.totalEarnings || 0) + earnings,
-          total_earnings: (metrics.totalEarnings || 0) + earnings,
+          compute_earnings: currentComputeEarnings + earnings,
+          total_earnings: currentTotalEarnings + earnings,
         })
         .eq('id', profile.id);
 

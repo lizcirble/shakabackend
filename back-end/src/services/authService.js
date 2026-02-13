@@ -31,12 +31,34 @@ const findUserByPrivyDid = async (privyDid) => {
         .from('users')
         .select('*')
         .eq('privy_did', privyDid)
-        .single();
+        .limit(1);
 
-    if (error && error.code !== 'PGRST116') { // PGRST116 = 'No rows found'
-        throw new ApiError(500, 'Failed to query user from database.');
+    if (error) {
+        // Fallback for deployments that use `profiles.auth_id` instead of `users.privy_did`.
+        logger.warn(`users lookup failed for ${privyDid}, falling back to profiles: ${error.message}`);
+
+        const { data: profileData, error: profileError } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('auth_id', privyDid)
+            .limit(1);
+
+        if (profileError) {
+            logger.error(`profiles fallback failed for ${privyDid}: ${profileError.message}`);
+            throw new ApiError(500, 'Failed to query user from database.');
+        }
+
+        if (!profileData?.[0]) {
+            return null;
+        }
+
+        return {
+            ...profileData[0],
+            privy_did: profileData[0].auth_id,
+            source_table: 'profiles',
+        };
     }
-    return data;
+    return data?.[0] || null;
 };
 
 /**
@@ -59,8 +81,33 @@ const createNewUser = async (privyUser) => {
         .single();
 
     if (error) {
-        logger.error(`Failed to create new user: ${error.message}`);
-        throw new ApiError(500, 'Failed to create user in database.');
+        logger.warn(`users insert failed, trying profiles fallback: ${error.message}`);
+
+        const fallbackProfile = {
+            id: uuidv4(),
+            auth_id: privyUser.userId,
+            email: privyUser?.email?.address || null,
+            full_name: null,
+            avatar_url: null,
+            created_at: new Date().toISOString(),
+        };
+
+        const { data: profileData, error: profileError } = await supabase
+            .from('profiles')
+            .insert(fallbackProfile)
+            .select()
+            .single();
+
+        if (profileError) {
+            logger.error(`Failed to create fallback profile: ${profileError.message}`);
+            throw new ApiError(500, 'Failed to create user in database.');
+        }
+
+        return {
+            ...profileData,
+            privy_did: profileData.auth_id,
+            source_table: 'profiles',
+        };
     }
     return data;
 };
@@ -73,7 +120,7 @@ const createNewUser = async (privyUser) => {
 const generateLocalJWT = (user) => {
     const payload = {
         userId: user.id,
-        privyDid: user.privy_did,
+        privyDid: user.privy_did || user.auth_id,
         // Add any other roles or permissions here
     };
 

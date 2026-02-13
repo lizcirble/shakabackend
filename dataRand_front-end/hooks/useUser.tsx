@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { usePrivy } from "@privy-io/react-auth"
 import { supabase, type Profile } from "@/lib/supabase"
+import { api, getDeviceFingerprint } from "@/lib/datarand"
 
 export function useUser() {
   const {
@@ -29,9 +30,20 @@ export function useUser() {
             access_token: accessToken,
             refresh_token: accessToken,
           })
+
+          try {
+            // Exchange Privy token for DataRand backend JWT.
+            const loginResult = await api.login(accessToken, getDeviceFingerprint())
+            if (loginResult?.token) {
+              localStorage.setItem("datarand_token", loginResult.token)
+            }
+          } catch (error) {
+            console.error("Failed to initialize backend session:", error)
+          }
         }
       } else {
         await supabase.auth.signOut()
+        localStorage.removeItem("datarand_token")
       }
     }
 

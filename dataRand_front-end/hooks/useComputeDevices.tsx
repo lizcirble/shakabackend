@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useAuth } from "./useAuth";
-import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "./use-toast";
 import { useGlobalMetrics } from "./useGlobalMetrics";
 
@@ -258,29 +257,15 @@ export function useComputeDevices() {
         localStorage.setItem(`${device}ComputeActive`, 'false');
         localStorage.removeItem(`${device}ComputeStartTime`);
 
-        const sessionEarnings = currentState.sessionMinutes * 0.001;
+        const startTime = isPhone ? phoneStartRef.current : laptopStartRef.current;
+        const sessionMinutes = startTime
+          ? Math.max(1, Math.floor((Date.now() - startTime.getTime()) / 60000))
+          : Math.max(1, currentState.sessionMinutes);
+        const sessionEarnings = sessionMinutes * 0.001;
         
         // Save session to database
         try {
-          await addComputeSession(currentState.sessionMinutes, sessionEarnings);
-          
-          // Also save to Supabase directly for immediate availability
-          if (profile) {
-            const startTime = isPhone ? phoneStartRef.current : laptopStartRef.current;
-            if (startTime) {
-              await supabase
-                .from('compute_sessions')
-                .insert({
-                  worker_id: profile.id,
-                  device_type: device,
-                  started_at: startTime.toISOString(),
-                  ended_at: new Date().toISOString(),
-                  total_earned: sessionEarnings,
-                  earnings_rate: 0.001,
-                  is_active: false,
-                });
-            }
-          }
+          await addComputeSession(sessionMinutes, sessionEarnings, device);
         } catch (error) {
           console.error('Error saving compute session:', error);
         }

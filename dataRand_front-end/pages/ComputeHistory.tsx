@@ -10,7 +10,6 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Clock, Cpu, DollarSign, Calendar, RefreshCw } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { DataSeeder } from "@/components/dev/DataSeeder";
 
 interface ComputeSession {
   id: string;
@@ -29,93 +28,6 @@ export default function ComputeHistory() {
   const { totalEarnings, totalComputeSessions, totalComputeMinutes, refreshMetrics } = useGlobalMetrics();
   const [sessions, setSessions] = useState<ComputeSession[]>([]);
   const [loading, setLoading] = useState(true);
-
-  const createSampleSessions = useCallback(async () => {
-    if (!profile) return;
-    try {
-      const sampleSessions = [
-        {
-          worker_id: profile.id,
-          device_type: 'laptop',
-          started_at: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-          ended_at: new Date(Date.now() - 1 * 60 * 60 * 1000).toISOString(),
-          total_earned: 0.06,
-          earnings_rate: 0.001,
-          is_active: false,
-        },
-        {
-          worker_id: profile.id,
-          device_type: 'phone',
-          started_at: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(),
-          ended_at: new Date(Date.now() - 3.5 * 60 * 60 * 1000).toISOString(),
-          total_earned: 0.03,
-          earnings_rate: 0.001,
-          is_active: false,
-        },
-        {
-          worker_id: profile.id,
-          device_type: 'laptop',
-          started_at: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
-          ended_at: new Date(Date.now() - 22 * 60 * 60 * 1000).toISOString(),
-          total_earned: 0.12,
-          earnings_rate: 0.001,
-          is_active: false,
-        },
-        {
-          worker_id: profile.id,
-          device_type: 'laptop',
-          started_at: new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString(),
-          ended_at: new Date(Date.now() - 46 * 60 * 60 * 1000).toISOString(),
-          total_earned: 0.08,
-          earnings_rate: 0.001,
-          is_active: false,
-        },
-        {
-          worker_id: profile.id,
-          device_type: 'phone',
-          started_at: new Date(Date.now() - 72 * 60 * 60 * 1000).toISOString(),
-          ended_at: new Date(Date.now() - 71 * 60 * 60 * 1000).toISOString(),
-          total_earned: 0.04,
-          earnings_rate: 0.001,
-          is_active: false,
-        },
-      ];
-
-      const { data: insertedSessions, error } = await supabase
-        .from('compute_sessions')
-        .insert(sampleSessions)
-        .select();
-
-      if (error) {
-        console.error('Error creating sample sessions:', error);
-        return;
-      }
-
-      if (insertedSessions) {
-        const formattedSessions: ComputeSession[] = insertedSessions.map(session => {
-          const startTime = new Date(session.started_at);
-          const endTime = session.ended_at ? new Date(session.ended_at) : new Date();
-          const duration = Math.floor((endTime.getTime() - startTime.getTime()) / (1000 * 60));
-          
-          return {
-            id: session.id,
-            device: (session.device_type === 'phone' ? 'phone' : 'laptop') as 'phone' | 'laptop',
-            startTime,
-            endTime,
-            duration: Math.max(duration, 1),
-            earnings: session.total_earned || 0,
-            cpuUsage: Math.floor(Math.random() * 40) + 30,
-            status: session.is_active ? 'interrupted' : 'completed'
-          };
-        });
-        
-        setSessions(formattedSessions);
-      }
-    } catch (error) {
-      console.error('Error creating sample sessions:', error);
-      setSessions([]);
-    }
-  }, [profile]);
 
   const loadComputeSessions = useCallback(async () => {
     if (!profile) return;
@@ -153,25 +65,22 @@ export default function ComputeHistory() {
         
         setSessions(formattedSessions);
       } else {
-        // If no sessions found, create some sample data for demonstration
-        console.log('No compute sessions found, creating sample data...');
-        await createSampleSessions();
+        setSessions([]);
       }
     } catch (error) {
       console.error('Error loading compute sessions:', error);
-      // Create sample sessions as fallback
-      await createSampleSessions();
+      setSessions([]);
     } finally {
       setLoading(false);
     }
-  }, [profile, createSampleSessions]);
+  }, [profile]);
 
   useEffect(() => {
     if (profile) {
       loadComputeSessions();
       refreshMetrics();
     }
-  }, [profile]);
+  }, [profile, loadComputeSessions, refreshMetrics]);
 
   const formatDate = (date: Date) => {
     return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -207,9 +116,6 @@ export default function ComputeHistory() {
             Refresh
           </Button>
         </div>
-
-        {/* Development Data Seeder */}
-        {process.env.NODE_ENV === 'development' && <DataSeeder />}
 
         {/* Summary Stats */}
         <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">

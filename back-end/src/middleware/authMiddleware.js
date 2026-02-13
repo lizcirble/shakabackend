@@ -21,7 +21,23 @@ const authMiddleware = asyncHandler(async (req, res, next) => {
             .single();
 
         if (error || !user) {
-            throw new ApiError(401, 'Unauthorized. User not found.');
+            const { data: profile, error: profileError } = await supabase
+                .from('profiles')
+                .select('*')
+                .eq('id', decoded.userId)
+                .single();
+
+            if (profileError || !profile) {
+                throw new ApiError(401, 'Unauthorized. User not found.');
+            }
+
+            req.user = {
+                ...profile,
+                privy_did: profile.auth_id,
+                source_table: 'profiles',
+            };
+            next();
+            return;
         }
 
         req.user = user;

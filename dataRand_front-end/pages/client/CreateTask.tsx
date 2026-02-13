@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useCallback, useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { useAuth } from "@/hooks/useAuth";
+import { usePrivy, useWallets } from "@privy-io/react-auth";
 import { supabase, type TaskType } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,10 +19,8 @@ import {
 } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Loader2, Image, Headphones, Brain, Plus, DollarSign, Users, Globe, Upload, X, Video, Info, FileText, Clock, Wallet, CheckCircle, AlertCircle, ArrowRight } from "lucide-react";
-import { z } from "zod";
-import { ethers } from "ethers";
-import { api, CONFIG, getDeviceFingerprint } from "@/lib/datarand";
+import { ArrowLeft, Loader2, Image, Headphones, Brain, Plus, DollarSign, Users, Globe, X, Video, Info, FileText, Clock, Wallet, CheckCircle, AlertCircle, ArrowRight } from "lucide-react";
+import { api, CONFIG, getDeviceFingerprint, getPrivyWalletAddress } from "@/lib/datarand";
 
 const AFRICAN_COUNTRIES = [
   "Nigeria", "Kenya", "South Africa", "Ghana", "Ethiopia", "Tanzania",
@@ -42,21 +41,21 @@ const taskTypeIcons: Record<string, typeof Image> = {
   ai_evaluation: Brain,
 };
 
-const TASK_CATEGORIES = [
-  { value: "Image Labeling", label: "🖼️ Image Labeling" },
-  { value: "Audio Transcription", label: "🎙️ Audio Transcription" },
-  { value: "AI Evaluation", label: "🤖 AI Evaluation" },
-  { value: "ComputeShare", label: "💻 ComputeShare" },
-];
-
-// Step types
 type Step = "create" | "fund" | "complete";
+type CreatedTask = {
+  id: string;
+  title?: string;
+};
 
 export default function CreateTask() {
   const { profile, loading: authLoading } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  // Privy hooks for embedded wallet
+  const { user: privyUser, getAccessToken } = usePrivy();
+  const { wallets } = useWallets();
 
   const [taskTypes, setTaskTypes] = useState<TaskType[]>([]);
   const [loading, setLoading] = useState(false);
@@ -68,11 +67,13 @@ export default function CreateTask() {
   
   // DataRand Integration State
   const [step, setStep] = useState<Step>("create");
-  const [createdTask, setCreatedTask] = useState<any>(null);
-  const [walletConnected, setWalletConnected] = useState(false);
+  const [createdTask, setCreatedTask] = useState<CreatedTask | null>(null);
+  const [walletReady, setWalletReady] = useState(false);
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
   const [walletBalance, setWalletBalance] = useState<string>("0");
-  const [switchingNetwork, setSwitchingNetwork] = useState(false);
+  const [backendAuthReady, setBackendAuthReady] = useState(false);
+  const [isPreparingSession, setIsPreparingSession] = useState(false);
+  const [backendAuthError, setBackendAuthError] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
     title: "",
@@ -93,6 +94,96 @@ export default function CreateTask() {
   const totalCost = subtotal + platformFee;
   const hasEnoughBalance = parseFloat(walletBalance) >= totalCost;
 
+  const ensureBackendAuth = useCallback(async () => {
+    setIsPreparingSession(true);
+    setBackendAuthError(null);
+    const existingToken =
+      typeof window !== "undefined" ? localStorage.getItem("datarand_token") : null;
+    if (existingToken) {
+      setBackendAuthReady(true);
+      setIsPreparingSession(false);
+      return true;
+    }
+
+    try {
+      const accessToken = await getAccessToken();
+      if (!accessToken) {
+        setBackendAuthReady(false);
+        setBackendAuthError("Could not get a Privy access token. Please sign in again.");
+        setIsPreparingSession(false);
+        return false;
+      }
+
+      const loginResult = await api.login(accessToken, getDeviceFingerprint());
+      if (loginResult?.token && typeof window !== "undefined") {
+        localStorage.setItem("datarand_token", loginResult.token);
+        setBackendAuthReady(true);
+        setBackendAuthError(null);
+        setIsPreparingSession(false);
+        return true;
+      }
+
+      setBackendAuthReady(false);
+      setBackendAuthError("Backend session setup failed. Please try again.");
+      setIsPreparingSession(false);
+      return false;
+    } catch (error) {
+      setBackendAuthReady(false);
+      const message =
+        error instanceof Error ? error.message : "Backend session setup failed.";
+      setBackendAuthError(message);
+      setIsPreparingSession(false);
+      return false;
+    }
+  }, [getAccessToken]);
+
+  useEffect(() => {
+    if (!authLoading && profile) {
+      ensureBackendAuth().catch((error) => {
+        console.error("Failed to initialize backend auth on CreateTask:", error);
+      });
+    }
+  }, [authLoading, profile, ensureBackendAuth]);
+
+  // Get Privy embedded wallet address and balance
+  useEffect(() => {
+    const address = getPrivyWalletAddress(privyUser);
+    if (address) {
+      const matchingWallet = wallets.find(
+        (wallet) => wallet.address.toLowerCase() === address.toLowerCase()
+      );
+      setWalletAddress(address);
+      setWalletReady(Boolean(matchingWallet));
+      if (matchingWallet) {
+        fetchWalletBalance(address, matchingWallet);
+      } else {
+        setWalletBalance("0");
+      }
+    } else {
+      setWalletAddress(null);
+      setWalletReady(false);
+      setWalletBalance("0");
+    }
+  }, [privyUser, wallets]);
+
+  const fetchWalletBalance = async (
+    address: string,
+    wallet: { getEthereumProvider: () => Promise<{ request: (args: { method: string; params?: unknown[] }) => Promise<unknown> }> }
+  ) => {
+    try {
+      const provider = await wallet.getEthereumProvider();
+      const balanceHex = await provider.request({
+        method: "eth_getBalance",
+        params: [address, "latest"],
+      });
+      const balanceWei = BigInt(String(balanceHex));
+      const balanceEth = Number(balanceWei) / 1e18;
+      setWalletBalance(balanceEth.toFixed(4));
+    } catch (e) {
+      console.log("Could not fetch balance:", e);
+    }
+  };
+
   useEffect(() => {
     if (!authLoading && !profile) {
       router.push("/auth");
@@ -106,27 +197,6 @@ export default function CreateTask() {
       if (data) setTaskTypes(data as TaskType[]);
     };
     fetchTaskTypes();
-  }, []);
-
-  // Check for existing wallet connection
-  useEffect(() => {
-    const checkWallet = async () => {
-      if (typeof window !== 'undefined' && window.ethereum) {
-        try {
-          const provider = new ethers.BrowserProvider(window.ethereum);
-          const accounts = await provider.listAccounts();
-          if (accounts.length > 0) {
-            setWalletConnected(true);
-            setWalletAddress(accounts[0].address);
-            const balance = await provider.getBalance(accounts[0].address);
-            setWalletBalance(ethers.formatEther(balance));
-          }
-        } catch (e) {
-          console.error("Error checking wallet:", e);
-        }
-      }
-    };
-    checkWallet();
   }, []);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -169,8 +239,9 @@ export default function CreateTask() {
       
       const { data: publicUrlData } = supabase.storage.from('task_media').getPublicUrl(data.path);
       return { url: publicUrlData.publicUrl, type: mediaType };
-    } catch (error: any) {
-      toast({ title: "Upload Failed", description: error.message, variant: "destructive" });
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "Upload failed";
+      toast({ title: "Upload Failed", description: message, variant: "destructive" });
       return null;
     } finally {
       setUploadingMedia(false);
@@ -187,60 +258,22 @@ export default function CreateTask() {
     }
   };
 
-  // Connect Wallet Function
-  const connectWallet = async () => {
-    if (!window.ethereum) {
-      toast({ title: "No wallet found", description: "Please install MetaMask.", variant: "destructive" });
-      return;
-    }
-
-    try {
-      setSwitchingNetwork(true);
-      const provider = new ethers.BrowserProvider(window.ethereum);
-      await provider.send("eth_requestAccounts", []);
-      const accounts = await provider.listAccounts();
-      
-      setWalletConnected(true);
-      setWalletAddress(accounts[0].address);
-      const balance = await provider.getBalance(accounts[0].address);
-      setWalletBalance(ethers.formatEther(balance));
-
-      // Switch to Arbitrum Sepolia
-      try {
-        await provider.send("wallet_switchEthereumChain", [{ chainId: CONFIG.CHAIN_ID }]);
-      } catch (switchError: any) {
-        if (switchError.code === 4902) {
-          await provider.send("wallet_addEthereumChain", [{
-            chainId: CONFIG.CHAIN_ID,
-            chainName: CONFIG.CHAIN_NAME,
-            rpcUrls: [CONFIG.RPC_URL],
-            blockExplorerUrls: [CONFIG.BLOCK_EXPLORER],
-            nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
-          }]);
-        }
-      }
-
-      toast({ title: "Wallet connected", description: `${accounts[0].address.slice(0, 6)}...${accounts[0].address.slice(-4)}` });
-    } catch (error: any) {
-      toast({ title: "Connection failed", description: error.message, variant: "destructive" });
-    } finally {
-      setSwitchingNetwork(false);
-    }
-  };
-
   const handleCreateTask = async () => {
     if (!profile) return;
 
     setLoading(true);
     try {
-      // Upload media first if exists
+      const ready = await ensureBackendAuth();
+      if (!ready) {
+        throw new Error("Please sign in again to initialize your backend session.");
+      }
+
       let mediaData: { url: string; type: string } | null = null;
       if (mediaFile) {
         mediaData = await uploadMediaToSupabase(mediaFile);
         if (!mediaData) { setLoading(false); return; }
       }
 
-      // Transform to backend format
       const taskData = {
         title: formData.title,
         description: formData.description,
@@ -250,36 +283,43 @@ export default function CreateTask() {
         deadline: formData.deadline || null,
       };
 
-      // Call backend API
-      const result = await api.createTask(taskData);
+      const result = await api.createTask(taskData) as { task?: CreatedTask };
+      if (!result?.task?.id) {
+        throw new Error("Task created without an id.");
+      }
       setCreatedTask(result.task);
       setStep("fund");
 
       toast({ title: "Task Created!", description: "Now fund the task to make it available." });
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Create task error:", error);
-      toast({ title: "Error", description: error.message || "Failed to create task.", variant: "destructive" });
+      const message = error instanceof Error ? error.message : "Failed to create task.";
+      toast({ title: "Error", description: message, variant: "destructive" });
     } finally {
       setLoading(false);
     }
   };
 
   const handleFundTask = async () => {
-    if (!createdTask || !walletConnected) return;
+    if (!createdTask || !walletReady) return;
 
     setLoading(true);
     try {
-      // Call backend to fund task (this triggers the smart contract)
-      const result = await api.fundTask(createdTask.id);
+      const ready = await ensureBackendAuth();
+      if (!ready) {
+        throw new Error("Please sign in again to initialize your backend session.");
+      }
+
+      await api.fundTask(createdTask.id);
       
       toast({ title: "Task funded!", description: "Your task is now live!" });
       setStep("complete");
       
-      // Redirect after a short delay
       setTimeout(() => router.push("/client/tasks"), 2000);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Fund task error:", error);
-      toast({ title: "Funding failed", description: error.message || "Failed to fund task.", variant: "destructive" });
+      const message = error instanceof Error ? error.message : "Failed to fund task.";
+      toast({ title: "Funding failed", description: message, variant: "destructive" });
     } finally {
       setLoading(false);
     }
@@ -294,17 +334,15 @@ export default function CreateTask() {
   }
 
   const isVideo = mediaFile?.type.startsWith('video/');
-
-  // Calculate USD equivalent (approximate)
-  const ETH_PRICE_USD = 2500; // Approximate
+  const ETH_PRICE_USD = 2500;
   const totalCostUSD = (totalCost * ETH_PRICE_USD).toFixed(2);
 
   return (
     <AppLayout>
-      <div className="max-w-2xl mx-auto space-y-4 sm:space-y-6 animate-in fade-in duration-300 px-4 sm:px-0">
+      <div className="w-full max-w-3xl mx-auto space-y-4 sm:space-y-6 animate-in fade-in duration-300 px-4 sm:px-0">
         
         {/* Step Indicator */}
-        <div className="flex items-center justify-center gap-2 sm:gap-4 mb-6">
+        <div className="flex items-center justify-center gap-2 sm:gap-4 mb-6 overflow-x-auto">
           <div className={`flex items-center gap-2 ${step === "create" ? "text-primary" : step !== "create" ? "text-green-600" : "text-muted-foreground"}`}>
             <div className={`w-8 h-8 rounded-full flex items-center justify-center ${step === "create" ? "bg-primary text-white" : "bg-green-600 text-white"}`}>
               {step === "create" ? "1" : <CheckCircle className="w-5 h-5" />}
@@ -461,14 +499,33 @@ export default function CreateTask() {
                       </div>
                     </div>
                     <p className="text-sm text-muted-foreground mt-1">
-                      {formData.payoutPerWorker} ETH × {formData.requiredWorkers} workers + {(CONFIG.PLATFORM_FEE_PERCENTAGE)}% fee
+                      {formData.payoutPerWorker} ETH × {formData.requiredWorkers} workers + {CONFIG.PLATFORM_FEE_PERCENTAGE}% fee
                     </p>
                   </div>
                 )}
 
-                <Button type="submit" className="w-full" disabled={loading}>
+                {!backendAuthReady && !isPreparingSession && backendAuthError && (
+                  <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 p-3 text-sm">
+                    <p className="text-amber-700 dark:text-amber-300">{backendAuthError}</p>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="mt-2 w-full sm:w-auto"
+                      onClick={() => {
+                        ensureBackendAuth().catch((error) =>
+                          console.error("Manual backend auth retry failed:", error)
+                        );
+                      }}
+                    >
+                      Retry Session Setup
+                    </Button>
+                  </div>
+                )}
+
+                <Button type="submit" className="w-full" disabled={loading || isPreparingSession}>
                   {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <ArrowRight className="h-4 w-4 mr-2" />}
-                  Continue to Funding
+                  {isPreparingSession ? "Preparing session..." : "Continue to Funding"}
                 </Button>
               </form>
             ) : step === "fund" ? (
@@ -487,30 +544,29 @@ export default function CreateTask() {
                   </div>
                 </div>
 
-                {/* Wallet Connection */}
-                {!walletConnected ? (
+                {/* Wallet Status */}
+                {!walletReady ? (
                   <div className="p-4 rounded-lg border border-amber-500/50 bg-amber-500/10">
                     <div className="flex items-center gap-3 mb-3">
                       <AlertCircle className="h-5 w-5 text-amber-500" />
                       <div>
-                        <p className="font-medium">Connect your wallet</p>
-                        <p className="text-sm text-muted-foreground">You need ETH to fund the task</p>
+                        <p className="font-medium">No embedded wallet found</p>
+                        <p className="text-sm text-muted-foreground">Please create a wallet in your account settings</p>
                       </div>
                     </div>
-                    <Button onClick={connectWallet} className="w-full" disabled={switchingNetwork}>
-                      {switchingNetwork ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Wallet className="h-4 w-4 mr-2" />}
-                      Connect Wallet
-                    </Button>
                   </div>
                 ) : (
                   <div className="p-4 rounded-lg border border-green-500/50 bg-green-500/10">
                     <div className="flex items-center justify-between">
-                      <div>
-                        <p className="font-medium">Wallet Connected</p>
-                        <p className="text-sm text-muted-foreground">{walletAddress?.slice(0, 6)}...{walletAddress?.slice(-4)}</p>
+                      <div className="flex items-center gap-2">
+                        <Wallet className="h-5 w-5 text-green-600" />
+                        <div>
+                          <p className="font-medium">Embedded Wallet</p>
+                          <p className="text-sm text-muted-foreground">{walletAddress?.slice(0, 6)}...{walletAddress?.slice(-4)}</p>
+                        </div>
                       </div>
                       <div className="text-right">
-                        <p className="font-bold">{parseFloat(walletBalance).toFixed(4)} ETH</p>
+                        <p className="font-bold">{walletBalance} ETH</p>
                         <p className={`text-sm ${hasEnoughBalance ? "text-green-600" : "text-red-500"}`}>
                           {hasEnoughBalance ? "✓ Sufficient" : "⚠️ Insufficient"}
                         </p>
@@ -525,7 +581,7 @@ export default function CreateTask() {
                     <ArrowLeft className="h-4 w-4 mr-2" />
                     Back
                   </Button>
-                  <Button onClick={handleFundTask} className="flex-1" disabled={loading || !walletConnected || !hasEnoughBalance}>
+                  <Button onClick={handleFundTask} className="flex-1" disabled={loading || isPreparingSession || !walletReady || !hasEnoughBalance}>
                     {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Wallet className="h-4 w-4 mr-2" />}
                     Fund with ETH
                   </Button>

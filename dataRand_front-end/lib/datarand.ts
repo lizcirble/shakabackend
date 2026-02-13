@@ -1,5 +1,5 @@
 // DataRand Integration for Next.js Frontend
-// Uses Privy for auth and connects to backend API
+// Uses Privy embedded wallet for all transactions
 
 import { useState, useEffect, createContext, useContext } from 'react';
 
@@ -7,7 +7,7 @@ import { useState, useEffect, createContext, useContext } from 'react';
 // CONFIGURATION
 // ============================================
 
-const CONFIG = {
+export const CONFIG = {
   // Backend API
   API_BASE_URL: 'https://datarand.onrender.com/api/v1',
   
@@ -150,114 +150,23 @@ export function getDeviceFingerprint() {
 }
 
 // ============================================
-// HOOKS
+// PRIVY WALLET HELPER
 // ============================================
 
-export function useDataRand() {
-  return useContext(DataRandContext);
+// Get wallet address from Privy user object
+export function getPrivyWalletAddress(privyUser: any): string | null {
+  return privyUser?.wallet?.address || null;
 }
 
-// ============================================
-// PROVIDER COMPONENT
-// ============================================
+// Check if Privy wallet is ready
+export function isPrivyWalletReady(privyUser: any): boolean {
+  return !!privyUser?.wallet?.address;
+}
 
-export function DataRandProvider({ children }) {
-  const [user, setUser] = useState(null);
-  const [token, setToken] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [walletAddress, setWalletAddress] = useState(null);
-  const [walletBalance, setWalletBalance] = useState('0');
-  const [walletConnected, setWalletConnected] = useState(false);
-
-  // Initialize on mount
-  useEffect(() => {
-    if (typeof window === 'undefined') {
-      setLoading(false);
-      return;
-    }
-    
-    const savedToken = localStorage.getItem('datarand_token');
-    const savedUser = localStorage.getItem('datarand_user');
-    
-    if (savedToken && savedUser) {
-      api.setToken(savedToken);
-      setToken(savedToken);
-      setUser(JSON.parse(savedUser));
-    }
-    setLoading(false);
-  }, []);
-
-  const login = async (privyAccessToken, wallet) => {
-    try {
-      // Initialize wallet if provided
-      if (wallet && typeof window !== 'undefined') {
-        try {
-          const provider = await wallet.getEthersProvider();
-          const signer = provider.getSigner();
-          const address = await signer.getAddress();
-          setWalletAddress(address);
-          
-          const balance = await provider.getBalance(address);
-          setWalletBalance(balance.toString());
-          setWalletConnected(true);
-        } catch (e) {
-          console.log('Wallet initialization skipped:', e);
-        }
-      }
-
-      // Login to API
-      const deviceFingerprint = getDeviceFingerprint();
-      const result = await api.login(privyAccessToken, deviceFingerprint);
-
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('datarand_token', result.token);
-        localStorage.setItem('datarand_user', JSON.stringify(result.user));
-      }
-      
-      setToken(result.token);
-      setUser(result.user);
-
-      return result;
-    } catch (error) {
-      console.error('Login failed:', error);
-      throw error;
-    }
-  };
-
-  const logout = () => {
-    setToken(null);
-    setUser(null);
-    setWalletConnected(false);
-    setWalletAddress(null);
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('datarand_token');
-      localStorage.removeItem('datarand_user');
-    }
-  };
-
-  const refreshBalance = async () => {
-    if (walletAddress && typeof window !== 'undefined') {
-      // Would need provider here - simplified
-    }
-  };
-
-  const value = {
-    user,
-    token,
-    loading,
-    login,
-    logout,
-    walletAddress,
-    walletBalance,
-    walletConnected,
-    refreshBalance,
-  };
-
-  return (
-    <DataRandContext.Provider value={value}>
-      {children}
-    </DataRandContext.Provider>
-  );
+// Get ethers provider from Privy embedded wallet
+export async function getPrivyEthersProvider(privyWallet: any) {
+  if (!privyWallet) return null;
+  return await privyWallet.getEthersProvider();
 }
 
 export default CONFIG;
