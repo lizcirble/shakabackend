@@ -41,6 +41,12 @@ const taskTypeIcons: Record<string, typeof Image> = {
   ai_evaluation: Brain,
 };
 
+const FALLBACK_TASK_TYPES: TaskType[] = [
+  { id: "image_labeling", name: "image_labeling", description: "Image Labeling", icon: null },
+  { id: "audio_transcription", name: "audio_transcription", description: "Audio Transcription", icon: null },
+  { id: "ai_evaluation", name: "ai_evaluation", description: "AI Evaluation", icon: null },
+];
+
 type Step = "create" | "fund" | "complete";
 type CreatedTask = {
   id: string;
@@ -193,8 +199,16 @@ export default function CreateTask() {
 
   useEffect(() => {
     const fetchTaskTypes = async () => {
-      const { data } = await supabase.from("task_types").select("*");
-      if (data) setTaskTypes(data as TaskType[]);
+      try {
+        const { data, error } = await supabase.from("task_types").select("*");
+        if (error || !data || data.length === 0) {
+          setTaskTypes(FALLBACK_TASK_TYPES);
+          return;
+        }
+        setTaskTypes(data as TaskType[]);
+      } catch {
+        setTaskTypes(FALLBACK_TASK_TYPES);
+      }
     };
     fetchTaskTypes();
   }, []);

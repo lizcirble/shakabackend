@@ -59,7 +59,8 @@ class DataRandAPI {
     
     if (!response.ok) {
       const error = await response.json().catch(() => ({ message: 'Request failed' }));
-      throw new Error(error.message || `HTTP ${response.status}`);
+      const message = error.message || `HTTP ${response.status}`;
+      throw new Error(`${message} (${endpoint})`);
     }
 
     return response.json();

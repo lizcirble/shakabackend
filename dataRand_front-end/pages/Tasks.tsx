@@ -4,7 +4,6 @@ import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { useAuth } from "@/hooks/useAuth";
-import { useLocalTasks } from "@/hooks/useLocalTasks";
 import { supabase, type Task, type TaskType } from "@/lib/supabase";
 import { api } from "@/lib/datarand";
 import { TaskCard } from "@/components/tasks/TaskCard";
@@ -34,12 +33,19 @@ function Tasks() {
   const { toast } = useToast();
 
   const [tasks, setTasks] = useState<Task[]>([]);
-  const [backendTasks, setBackendTasks] = useState<any[]>([]);
   const [taskTypes, setTaskTypes] = useState<TaskType[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedType, setSelectedType] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const isPrivyOnlyProfile = Boolean(profile?.id?.startsWith("did:privy:"));
+  const getErrorMessage = (err: unknown) => {
+    if (err instanceof Error) return err.message
+    if (err && typeof err === "object") {
+      const maybeError = err as { message?: string; error?: string; details?: string }
+      return maybeError.message || maybeError.error || maybeError.details || JSON.stringify(maybeError)
+    }
+    return "Unknown error"
+  }
 
   const fetchTasks = useCallback(async () => {
     if (!profile) return;
@@ -63,9 +69,9 @@ function Tasks() {
       try {
         const result = await api.getAvailableTasks();
         if (result.tasks && result.tasks.length > 0) {
-          setBackendTasks(result.tasks);
+          console.log(`Loaded ${result.tasks.length} tasks from backend API`);
         }
-      } catch (e) {
+      } catch {
         console.log("Backend not available, using Supabase");
       }
 
@@ -92,7 +98,7 @@ function Tasks() {
       setTasks((tasks || []) as Task[]);
       
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Unknown error";
+      const errorMessage = getErrorMessage(err);
       
       toast({
         title: "Failed to load tasks",
