@@ -87,16 +87,19 @@ export default function ClientTasks() {
 
     setLoading(true);
     try {
+      console.log('Fetching tasks for profile:', profile.id);
+      
       // Fetch from backend API
       try {
         const result = await api.getMyTasks();
+        console.log('Backend tasks:', result.tasks?.length || 0);
         setBackendTasks(result.tasks || []);
       } catch (e) {
-        console.log("Backend API not available, using Supabase only");
+        console.error("Backend API error:", e);
       }
 
       // Also fetch from Supabase for additional data
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("tasks")
         .select(
           "*, task_assignments(*, worker:profiles(full_name, email, reputation_score))"
@@ -104,9 +107,15 @@ export default function ClientTasks() {
         .eq("client_id", profile.id)
         .order("created_at", { ascending: false });
 
+      console.log('Supabase tasks:', data?.length || 0, 'error:', error);
+      
+      if (error) {
+        console.error('Supabase error:', error);
+      }
+
       setTasks((data as any) || []);
     } catch (err) {
-      console.error("Error:", err);
+      console.error("Error fetching tasks:", err);
     } finally {
       setLoading(false);
     }

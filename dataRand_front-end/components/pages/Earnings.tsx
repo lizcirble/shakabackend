@@ -168,11 +168,15 @@ function Earnings() {
       
       const apiKey = process.env.NEXT_PUBLIC_ARBISCAN_API_KEY || "YourApiKeyToken";
       
+      console.log('Fetching transactions for:', walletAddress, 'on chain:', chainId);
+      
       // Fetch normal transactions
       const normalTxResponse = await fetch(
         `${apiUrl}?module=account&action=txlist&address=${walletAddress}&startblock=0&endblock=99999999&sort=desc&apikey=${apiKey}`
       );
       const normalTxData = await normalTxResponse.json();
+      
+      console.log('Normal tx response:', normalTxData.status, normalTxData.message);
       
       // Fetch internal transactions
       const internalTxResponse = await fetch(
@@ -190,6 +194,7 @@ function Earnings() {
 
       // Process normal transactions
       if (normalTxData.status === "1" && Array.isArray(normalTxData.result)) {
+        console.log('Found', normalTxData.result.length, 'normal transactions');
         normalTxData.result.forEach((tx: any) => {
           allTxs.push({
             hash: tx.hash,
