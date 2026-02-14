@@ -177,7 +177,7 @@ export default function ClientTasks() {
 
   const filteredTasks = tasks.filter((task) => {
     if (activeTab === "active")
-      return ["available", "assigned", "in_progress"].includes(task.status);
+      return ["available", "assigned", "in_progress", "DRAFT", "FUNDED"].includes(task.status);
     if (activeTab === "pending")
       return task.status === "submitted";
     if (activeTab === "completed")
@@ -185,7 +185,10 @@ export default function ClientTasks() {
     return true;
   });
 
-  const activeTasksCount = tasks.filter(t => ["available", "assigned", "in_progress"].includes(t.status)).length;
+  console.log('Active tab:', activeTab, 'Total tasks:', tasks.length, 'Filtered:', filteredTasks.length);
+  console.log('Task statuses:', tasks.map(t => t.status));
+
+  const activeTasksCount = tasks.filter(t => ["available", "assigned", "in_progress", "DRAFT", "FUNDED"].includes(t.status)).length;
   const pendingTasksCount = tasks.filter(t => t.status === "submitted").length;
   const completedTasksCount = tasks.filter(t => ["approved", "rejected"].includes(t.status)).length;
 
