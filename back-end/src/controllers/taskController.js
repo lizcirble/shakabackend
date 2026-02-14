@@ -27,7 +27,7 @@ const fundTask = asyncHandler(async (req, res) => {
         throw new ApiError(400, 'Task ID is required.');
     }
 
-    const fundedTask = await taskService.fundTask(Number(taskId), userId);
+    const fundedTask = await taskService.fundTask(taskId, userId);
 
     res.status(200).json({
         success: true,
@@ -39,7 +39,7 @@ const fundTask = asyncHandler(async (req, res) => {
 const getTask = asyncHandler(async (req, res) => {
     const { id: taskId } = req.params;
 
-    const task = await taskService.getTaskById(Number(taskId));
+    const task = await taskService.getTaskById(taskId);
 
     res.status(200).json({
         success: true,

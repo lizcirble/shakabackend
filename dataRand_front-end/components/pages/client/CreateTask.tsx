@@ -543,45 +543,45 @@ export default function CreateTask() {
                 </Button>
               </form>
             ) : step === "fund" ? (
-              <div className="space-y-6">
+              <div className="space-y-4 sm:space-y-6">
                 {/* Task Summary */}
-                <div className="p-4 rounded-lg bg-muted/50">
-                  <h3 className="font-semibold mb-3">{createdTask?.title}</h3>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex justify-between"><span className="text-muted-foreground">Category</span><span>{taskTypes.find(t => t.id === formData.taskTypeId)?.description}</span></div>
-                    <div className="flex justify-between"><span className="text-muted-foreground">Payout/Worker</span><span>{payoutETH} ETH</span></div>
-                    <div className="flex justify-between"><span className="text-muted-foreground">Workers</span><span>{workers}</span></div>
-                    <hr />
-                    <div className="flex justify-between"><span>Subtotal</span><span>{subtotal.toFixed(4)} ETH</span></div>
-                    <div className="flex justify-between"><span>Platform Fee (15%)</span><span>{platformFee.toFixed(4)} ETH</span></div>
-                    <div className="flex justify-between font-bold text-lg"><span>Total Required</span><span className="text-primary">{totalCost.toFixed(4)} ETH</span></div>
+                <div className="p-3 sm:p-4 rounded-lg bg-muted/50">
+                  <h3 className="font-semibold mb-3 text-base sm:text-lg">{createdTask?.title}</h3>
+                  <div className="space-y-2 text-xs sm:text-sm">
+                    <div className="flex justify-between gap-2"><span className="text-muted-foreground">Category</span><span className="text-right">{taskTypes.find(t => t.id === formData.taskTypeId)?.description}</span></div>
+                    <div className="flex justify-between gap-2"><span className="text-muted-foreground">Payout/Worker</span><span>{payoutETH} ETH</span></div>
+                    <div className="flex justify-between gap-2"><span className="text-muted-foreground">Workers</span><span>{workers}</span></div>
+                    <hr className="my-2" />
+                    <div className="flex justify-between gap-2"><span>Subtotal</span><span>{subtotal.toFixed(4)} ETH</span></div>
+                    <div className="flex justify-between gap-2"><span>Platform Fee (15%)</span><span>{platformFee.toFixed(4)} ETH</span></div>
+                    <div className="flex justify-between gap-2 font-bold text-base sm:text-lg pt-2"><span>Total Required</span><span className="text-primary">{totalCost.toFixed(4)} ETH</span></div>
                   </div>
                 </div>
 
                 {/* Wallet Status */}
                 {!walletReady ? (
-                  <div className="p-4 rounded-lg border border-amber-500/50 bg-amber-500/10">
-                    <div className="flex items-center gap-3 mb-3">
-                      <AlertCircle className="h-5 w-5 text-amber-500" />
-                      <div>
-                        <p className="font-medium">No embedded wallet found</p>
-                        <p className="text-sm text-muted-foreground">Please create a wallet in your account settings</p>
+                  <div className="p-3 sm:p-4 rounded-lg border border-amber-500/50 bg-amber-500/10">
+                    <div className="flex items-start gap-3">
+                      <AlertCircle className="h-5 w-5 text-amber-500 flex-shrink-0 mt-0.5" />
+                      <div className="min-w-0 flex-1">
+                        <p className="font-medium text-sm sm:text-base">No embedded wallet found</p>
+                        <p className="text-xs sm:text-sm text-muted-foreground mt-1">Please create a wallet in your account settings</p>
                       </div>
                     </div>
                   </div>
                 ) : (
-                  <div className="p-4 rounded-lg border border-green-500/50 bg-green-500/10">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <Wallet className="h-5 w-5 text-green-600" />
-                        <div>
-                          <p className="font-medium">Embedded Wallet</p>
-                          <p className="text-sm text-muted-foreground">{walletAddress?.slice(0, 6)}...{walletAddress?.slice(-4)}</p>
+                  <div className="p-3 sm:p-4 rounded-lg border border-green-500/50 bg-green-500/10">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <Wallet className="h-5 w-5 text-green-600 flex-shrink-0" />
+                        <div className="min-w-0">
+                          <p className="font-medium text-sm sm:text-base">Embedded Wallet</p>
+                          <p className="text-xs sm:text-sm text-muted-foreground truncate">{walletAddress?.slice(0, 6)}...{walletAddress?.slice(-4)}</p>
                         </div>
                       </div>
-                      <div className="text-right">
-                        <p className="font-bold">{walletBalance} ETH</p>
-                        <p className={`text-sm ${hasEnoughBalance ? "text-green-600" : "text-red-500"}`}>
+                      <div className="text-left sm:text-right">
+                        <p className="font-bold text-base sm:text-lg">{walletBalance} ETH</p>
+                        <p className={`text-xs sm:text-sm ${hasEnoughBalance ? "text-green-600" : "text-red-500"}`}>
                           {hasEnoughBalance ? "✓ Sufficient" : "⚠️ Insufficient"}
                         </p>
                       </div>
@@ -591,11 +591,11 @@ export default function CreateTask() {
 
                 {/* Actions */}
                 <div className="flex flex-col sm:flex-row gap-3">
-                  <Button variant="outline" onClick={() => setStep("create")} className="flex-1" disabled={loading}>
+                  <Button variant="outline" onClick={() => setStep("create")} className="w-full sm:flex-1" disabled={loading}>
                     <ArrowLeft className="h-4 w-4 mr-2" />
                     Back
                   </Button>
-                  <Button onClick={handleFundTask} className="flex-1" disabled={loading || isPreparingSession || !walletReady || !hasEnoughBalance}>
+                  <Button onClick={handleFundTask} className="w-full sm:flex-1" disabled={loading || isPreparingSession || !walletReady || !hasEnoughBalance}>
                     {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Wallet className="h-4 w-4 mr-2" />}
                     Fund with ETH
                   </Button>
