@@ -78,6 +78,7 @@ class DataRandAPI {
 
   // Auth
   async login(privyAccessToken, deviceFingerprint) {
+    console.log(JSON.stringify({ privyAccessToken, deviceFingerprint }));
     return this.request('/auth/login', {
       method: 'POST',
       body: JSON.stringify({ privyAccessToken, deviceFingerprint }),

@@ -16,6 +16,134 @@ const LARGE_TASK_WORKER_THRESHOLD = 50;
 const COMPLEX_TASK_CATEGORIES = ['AI Evaluation'];
 
 /**
+ * Resolves a profile ID from an authenticated actor ID.
+ * Supports both deployments where auth maps to `users.id` and `profiles.id`.
+ * @param {string} actorId
+ * @returns {Promise<string|null>}
+ */
+const resolveProfileId = async (actorId) => {
+    const { data: profileById } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('id', actorId)
+        .maybeSingle();
+
+    if (profileById?.id) {
+        return profileById.id;
+    }
+
+    const { data: userById } = await supabase
+        .from('users')
+        .select('privy_did')
+        .eq('id', actorId)
+        .maybeSingle();
+
+    if (!userById?.privy_did) {
+        return null;
+    }
+
+    const { data: profileByAuthId } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('auth_id', userById.privy_did)
+        .maybeSingle();
+
+    if (profileByAuthId?.id) {
+        return profileByAuthId.id;
+    }
+
+    // Backfill profile row for deployments where users exist without profiles.
+    const { data: createdProfile, error: createProfileError } = await supabase
+        .from('profiles')
+        .insert({ auth_id: userById.privy_did })
+        .select('id')
+        .single();
+
+    if (!createProfileError && createdProfile?.id) {
+        return createdProfile.id;
+    }
+
+    // Handle potential race condition (another request created it first).
+    const { data: profileAfterRace } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('auth_id', userById.privy_did)
+        .maybeSingle();
+
+    return profileAfterRace?.id || null;
+};
+
+/**
+ * Resolves creator context for task creation.
+ * @param {string} actorId
+ * @returns {Promise<{ profileId: string | null, walletAddress: string | null, isFirstTask: boolean }>}
+ */
+const resolveCreatorContext = async (actorId) => {
+    const profileId = await resolveProfileId(actorId);
+
+    const { data: userById } = await supabase
+        .from('users')
+        .select('wallet_address, is_first_task, privy_did')
+        .eq('id', actorId)
+        .maybeSingle();
+
+    if (userById) {
+        return {
+            profileId,
+            walletAddress: userById.wallet_address || null,
+            isFirstTask: Boolean(userById.is_first_task),
+        };
+    }
+
+    const { data: profile } = await supabase
+        .from('profiles')
+        .select('auth_id')
+        .eq('id', actorId)
+        .maybeSingle();
+
+    if (!profile?.auth_id) {
+        return { profileId, walletAddress: null, isFirstTask: false };
+    }
+
+    const { data: userByAuthId } = await supabase
+        .from('users')
+        .select('wallet_address, is_first_task')
+        .eq('privy_did', profile.auth_id)
+        .maybeSingle();
+
+    return {
+        profileId,
+        walletAddress: userByAuthId?.wallet_address || null,
+        isFirstTask: Boolean(userByAuthId?.is_first_task),
+    };
+};
+
+/**
+ * Resolves wallet address for a profile ID.
+ * @param {string} profileId
+ * @returns {Promise<string|null>}
+ */
+const getWalletAddressForProfile = async (profileId) => {
+    const { data: profile } = await supabase
+        .from('profiles')
+        .select('auth_id')
+        .eq('id', profileId)
+        .maybeSingle();
+
+    if (!profile?.auth_id) {
+        return null;
+    }
+
+    const { data: user } = await supabase
+        .from('users')
+        .select('wallet_address')
+        .eq('privy_did', profile.auth_id)
+        .maybeSingle();
+
+    return user?.wallet_address || null;
+};
+
+/**
  * Validates task input data.
  * @param {object} taskData - The data for the new task.
  * @param {object} creator - The user object of the creator.
@@ -86,19 +214,33 @@ const splitAndOffloadToWSA = async (task) => {
  * @returns {Promise<object>} The newly created task object.
  */
 const createTask = async (taskData, creatorId) => {
-    const { data: creator, error: creatorError } = await supabase
-        .from('users')
-        .select('id, wallet_address, is_first_task')
-        .eq('id', creatorId)
-        .single();
-
-    if (creatorError || !creator) {
-        throw new ApiError(404, 'Task creator not found.');
+    const creatorContext = await resolveCreatorContext(creatorId);
+    if (!creatorContext.profileId) {
+        throw new ApiError(404, 'Task creator profile not found.');
     }
 
-    validateTaskInput(taskData, creator);
+    validateTaskInput(taskData, { is_first_task: creatorContext.isFirstTask });
+
+    logger.info(`Creating task with data: ${JSON.stringify(taskData, null, 2)}`);
 
     const { title, description, category, payoutPerWorker, requiredWorkers, deadline } = taskData;
+
+    let expiresAt = null;
+    if (deadline) {
+        const parsedDate = new Date(deadline);
+        if (!isNaN(parsedDate.getTime())) {
+            expiresAt = parsedDate.toISOString();
+        } else {
+            logger.warn(`Invalid deadline format received: ${deadline}. Setting expires_at to null.`);
+        }
+    }
+
+    let payoutInWei;
+    try {
+        payoutInWei = ethers.parseEther(payoutPerWorker.toString());
+    } catch (e) {
+        throw new ApiError(400, `Invalid payout amount: ${payoutPerWorker}. Must be a valid number.`);
+    }
 
     const categorySlug = category.toLowerCase().replace(/ /g, '_');
     const { data: taskType } = await supabase
@@ -107,7 +249,6 @@ const createTask = async (taskData, creatorId) => {
         .ilike('name', categorySlug)
         .single();
 
-    const payoutInWei = ethers.parseEther(payoutPerWorker.toString());
     const subtotal = payoutInWei * BigInt(requiredWorkers);
     const platformFee = (subtotal * BigInt(PLATFORM_FEE_PERCENTAGE)) / 100n;
     const totalCost = subtotal + platformFee;
@@ -115,12 +256,12 @@ const createTask = async (taskData, creatorId) => {
     const newTask = {
         title,
         description,
-        client_id: creatorId,
+        client_id: creatorContext.profileId,
         task_type_id: taskType?.id || null,
         payout_amount: payoutInWei.toString(),
         worker_count: requiredWorkers,
         status: 'DRAFT',
-        expires_at: deadline,
+        expires_at: expiresAt,
     };
 
     const { data: createdTask, error: insertError } = await supabase
@@ -136,12 +277,16 @@ const createTask = async (taskData, creatorId) => {
 
     // Try to create task on-chain, but continue even if it fails (for development)
     try {
-        await escrowService.createTaskOnChain(
-            createdTask.id,
-            creator.wallet_address,
-            payoutInWei.toString(),
-            requiredWorkers
-        );
+        if (creatorContext.walletAddress) {
+            await escrowService.createTaskOnChain(
+                createdTask.id,
+                creatorContext.walletAddress,
+                payoutInWei.toString(),
+                requiredWorkers
+            );
+        } else {
+            logger.warn(`Skipping on-chain task creation for task ${createdTask.id}: creator wallet not found.`);
+        }
     } catch (chainError) {
         logger.warn(`On-chain task creation skipped: ${chainError.message}`);
     }
@@ -159,9 +304,14 @@ const createTask = async (taskData, creatorId) => {
  * @returns {Promise<object>} The updated task object.
  */
 const fundTask = async (taskId, userId) => {
+    const requesterProfileId = await resolveProfileId(userId);
+    if (!requesterProfileId) {
+        throw new ApiError(404, 'Requesting user profile not found.');
+    }
+
     const { data: task, error: taskError } = await supabase
         .from('tasks')
-        .select('*, creator:users(id, wallet_address)')
+        .select('*')
         .eq('id', taskId)
         .single();
 
@@ -169,7 +319,7 @@ const fundTask = async (taskId, userId) => {
         throw new ApiError(404, 'Task not found.');
     }
 
-    if (task.client_id !== userId) {
+    if (task.client_id !== requesterProfileId) {
         throw new ApiError(403, 'Only the task creator can fund this task.');
     }
 
@@ -179,9 +329,13 @@ const fundTask = async (taskId, userId) => {
 
     // Call the on-chain funding function
     const totalCost = BigInt(task.payout_amount) * BigInt(task.worker_count);
+    const creatorWalletAddress = await getWalletAddressForProfile(task.client_id);
+    if (!creatorWalletAddress) {
+        throw new ApiError(400, 'Creator wallet address not found for funding.');
+    }
     await escrowService.fundTaskOnChain(
         task.id,
-        task.creator.wallet_address,
+        creatorWalletAddress,
         totalCost.toString()
     );
 
@@ -259,7 +413,7 @@ const assignTaskToWorker = async (workerId) => {
 const getTaskById = async (taskId) => {
     const { data: task, error } = await supabase
         .from('tasks')
-        .select('*, creator:users(id, wallet_address)')
+        .select('*')
         .eq('id', taskId)
         .single();
 
@@ -271,10 +425,15 @@ const getTaskById = async (taskId) => {
 };
 
 const getTasksByCreator = async (creatorId) => {
+    const creatorProfileId = await resolveProfileId(creatorId);
+    if (!creatorProfileId) {
+        return [];
+    }
+
     const { data: tasks, error } = await supabase
         .from('tasks')
         .select('*')
-        .eq('client_id', creatorId)
+        .eq('client_id', creatorProfileId)
         .order('created_at', { ascending: false });
 
     if (error) {
