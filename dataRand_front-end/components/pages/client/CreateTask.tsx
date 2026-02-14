@@ -315,7 +315,14 @@ export default function CreateTask() {
   };
 
   const handleFundTask = async () => {
-    if (!createdTask || !walletReady) return;
+    if (!createdTask || !walletReady) {
+      toast({ 
+        title: "Wallet Required", 
+        description: "Please create an embedded wallet first.", 
+        variant: "destructive" 
+      });
+      return;
+    }
 
     setLoading(true);
     try {
@@ -333,7 +340,17 @@ export default function CreateTask() {
     } catch (error: unknown) {
       console.error("Fund task error:", error);
       const message = error instanceof Error ? error.message : "Failed to fund task.";
-      toast({ title: "Funding failed", description: message, variant: "destructive" });
+      
+      // Show helpful message for wallet issues
+      if (message.includes("wallet")) {
+        toast({ 
+          title: "Wallet Setup Required", 
+          description: "Please create an embedded wallet in your profile settings first.", 
+          variant: "destructive" 
+        });
+      } else {
+        toast({ title: "Funding failed", description: message, variant: "destructive" });
+      }
     } finally {
       setLoading(false);
     }

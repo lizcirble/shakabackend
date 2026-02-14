@@ -24,13 +24,16 @@ const loginOrRegister = asyncHandler(async (req, res) => {
         logger.info(`New user created with Privy DID: ${user.privy_did}`);
     }
 
-    // 3. Update device fingerprint
-    // This is a simplified implementation. A real-world scenario would involve
-    // more complex logic to handle multiple devices and prevent Sybil attacks.
+    // 3. Update device fingerprint and wallet address
+    const walletAddress = privyUser.wallet?.address || null;
     const targetTable = user.source_table === 'profiles' ? 'profiles' : 'users';
     const updatePayload = targetTable === 'profiles'
         ? { updated_at: new Date().toISOString() }
-        : { last_fingerprint: deviceFingerprint, last_login_at: new Date() };
+        : { 
+            last_fingerprint: deviceFingerprint, 
+            last_login_at: new Date(),
+            ...(walletAddress && { wallet_address: walletAddress })
+          };
 
     const { error: updateError } = await supabase
         .from(targetTable)
@@ -39,7 +42,8 @@ const loginOrRegister = asyncHandler(async (req, res) => {
 
     if (updateError) {
         logger.error(`Failed to update login metadata on ${targetTable}: ${updateError.message}`);
-        // Non-critical error, so we only log it and continue.
+    } else if (walletAddress) {
+        logger.info(`Updated wallet address for user ${user.id}: ${walletAddress}`);
     }
 
     // 4. Generate a local JWT for our API

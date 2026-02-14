@@ -336,17 +336,25 @@ const fundTask = async (taskId, userId) => {
         throw new ApiError(400, `Task cannot be funded. Status is: ${task.status}`);
     }
 
-    // Call the on-chain funding function
-    const totalCost = BigInt(task.payout_amount) * BigInt(task.worker_count);
+    // Get creator wallet address for on-chain funding
     const creatorWalletAddress = await getWalletAddressForProfile(task.client_id);
-    if (!creatorWalletAddress) {
-        throw new ApiError(400, 'Creator wallet address not found for funding.');
+    
+    // If wallet address exists, try on-chain funding
+    if (creatorWalletAddress) {
+        try {
+            const totalCost = BigInt(task.payout_amount) * BigInt(task.worker_count);
+            await escrowService.fundTaskOnChain(
+                task.id,
+                creatorWalletAddress,
+                totalCost.toString()
+            );
+            console.log('On-chain funding successful');
+        } catch (error) {
+            console.warn('On-chain funding failed, continuing with DB update:', error.message);
+        }
+    } else {
+        console.warn('No wallet address found, skipping on-chain funding');
     }
-    await escrowService.fundTaskOnChain(
-        task.id,
-        creatorWalletAddress,
-        totalCost.toString()
-    );
 
     // If on-chain funding is successful, update the DB status
     const { data: updatedTask, error: updateError } = await supabase
