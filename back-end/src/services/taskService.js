@@ -304,18 +304,25 @@ const createTask = async (taskData, creatorId) => {
  * @returns {Promise<object>} The updated task object.
  */
 const fundTask = async (taskId, userId) => {
+    console.log('fundTask called with taskId:', taskId, 'userId:', userId);
+    
     const requesterProfileId = await resolveProfileId(userId);
     if (!requesterProfileId) {
         throw new ApiError(404, 'Requesting user profile not found.');
     }
 
+    console.log('Looking for task with id:', taskId, 'type:', typeof taskId);
+    
     const { data: task, error: taskError } = await supabase
         .from('tasks')
         .select('*')
         .eq('id', taskId)
         .single();
 
+    console.log('Task query result:', { task, taskError });
+
     if (taskError || !task) {
+        console.error('Task not found. Error:', taskError);
         throw new ApiError(404, 'Task not found.');
     }
 
@@ -323,6 +330,8 @@ const fundTask = async (taskId, userId) => {
         throw new ApiError(403, 'Only the task creator can fund this task.');
     }
 
+    console.log('Task status:', task.status);
+    
     if (task.status !== 'DRAFT') {
         throw new ApiError(400, `Task cannot be funded. Status is: ${task.status}`);
     }

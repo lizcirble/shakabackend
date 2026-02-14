@@ -105,7 +105,10 @@ function Earnings() {
   const [selectedChainId, setSelectedChainId] = useState<number>(arbitrumSepolia.id);
 
   const handleChainToggle = (chainId: number) => {
+    console.log('Chain toggled to:', chainId);
     setSelectedChainId(chainId);
+    setTransactions([]); // Clear transactions immediately
+    setLoading(true); // Show loading state
   };
   
   // Get Privy embedded wallet address
@@ -312,6 +315,7 @@ function Earnings() {
   };
 
   useEffect(() => {
+    console.log('Fetching data for chain:', selectedChainId, 'address:', address);
     fetchData();
   }, [profile, address, selectedChainId, ethBalance]);
 
@@ -605,7 +609,10 @@ function Earnings() {
                       value={String(selectedChainId)}
                       onValueChange={(value) => {
                         const newChainId = Number(value);
+                        console.log('Chain selector changed to:', newChainId);
                         setSelectedChainId(newChainId);
+                        setTransactions([]); // Clear old transactions
+                        setLoading(true); // Show loading
                         if (chainId !== newChainId) {
                           switchChain({ chainId: newChainId });
                         }
