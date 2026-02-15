@@ -80,8 +80,8 @@ export function useWalletBalance(chainId?: number) {
     };
   }
 
-  const usdcBalance = usdcBalanceData?.value ? parseFloat(formatUnits(usdcBalanceData.value, 6)).toFixed(2) : "0";
-  const ethBalance = ethBalanceData?.value ? parseFloat(formatUnits(ethBalanceData.value, 18)).toFixed(4) : "0";
+  const usdcBalance = usdcBalanceData?.value ? parseFloat(formatUnits(usdcBalanceData.value, usdcBalanceData.decimals || 6)).toFixed(2) : "0";
+  const ethBalance = ethBalanceData?.value ? parseFloat(formatUnits(ethBalanceData.value, ethBalanceData.decimals || 18)).toFixed(4) : "0";
 
   return {
     usdcBalance,
