@@ -511,12 +511,18 @@ function Earnings() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="p-3 sm:p-6 pt-0">
-                <p className="text-xl sm:text-3xl font-display font-bold text-primary">
-                  ${stats.available.toFixed(2)}
-                </p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  {stats.available_eth.toFixed(4)} ETH
-                </p>
+                <div className="flex items-center gap-2">
+                  <img src="https://cryptologos.cc/logos/usd-coin-usdc-logo.png" alt="USDC" className="h-5 w-5" />
+                  <p className="text-xl sm:text-3xl font-display font-bold text-primary">
+                    ${stats.available.toFixed(2)}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2 mt-1">
+                  <img src="https://cryptologos.cc/logos/ethereum-eth-logo.png" alt="ETH" className="h-4 w-4" />
+                  <p className="text-xs text-muted-foreground">
+                    {stats.available_eth.toFixed(4)} ETH
+                  </p>
+                </div>
               </CardContent>
             </Card>
 
@@ -528,9 +534,12 @@ function Earnings() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="p-3 sm:p-6 pt-0">
-                <p className="text-xl sm:text-3xl font-display font-bold">
-                  ${stats.pending.toFixed(2)}
-                </p>
+                <div className="flex items-center gap-2">
+                  <img src="https://cryptologos.cc/logos/usd-coin-usdc-logo.png" alt="USDC" className="h-5 w-5" />
+                  <p className="text-xl sm:text-3xl font-display font-bold">
+                    ${stats.pending.toFixed(2)}
+                  </p>
+                </div>
                 {stats.pendingWithdrawals > 0 && (
                   <p className="text-xs text-yellow-500 mt-1 truncate">
                     ${stats.pendingWithdrawals.toFixed(2)} pending
@@ -547,23 +556,29 @@ function Earnings() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="p-3 sm:p-6 pt-0">
-                <p className="text-xl sm:text-3xl font-display font-bold">
+                <div className="flex items-center gap-2">
+                  <img src="https://cryptologos.cc/logos/usd-coin-usdc-logo.png" alt="USDC" className="h-5 w-5" />
+                  <p className="text-xl sm:text-3xl font-display font-bold">
                   ${totalEarnings.toFixed(2)}
                 </p>
+                </div>
               </CardContent>
             </Card>
 
             <Card className="border-border/50 bg-gradient-to-br from-secondary/10 to-transparent">
-              <CardHeader className="pb-2">
-                <CardDescription className="flex items-center gap-2">
-                  <GraduationCap className="h-4 w-4" />
-                  Education Fund
+              <CardHeader className="pb-2 p-3 sm:p-6">
+                <CardDescription className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
+                  <GraduationCap className="h-3 w-3 sm:h-4 sm:w-4" />
+                  <span className="truncate">Education Fund</span>
                 </CardDescription>
               </CardHeader>
-              <CardContent>
-                <p className="text-3xl font-display font-bold text-secondary">
-                  ${educationFundContribution.toFixed(2)}
-                </p>
+              <CardContent className="p-3 sm:p-6 pt-0">
+                <div className="flex items-center gap-2">
+                  <img src="https://cryptologos.cc/logos/usd-coin-usdc-logo.png" alt="USDC" className="h-5 w-5" />
+                  <p className="text-xl sm:text-3xl font-display font-bold text-secondary">
+                    ${educationFundContribution.toFixed(2)}
+                  </p>
+                </div>
                 <p className="text-xs text-muted-foreground mt-1">
                   15% of ComputeShare earnings fund education
                 </p>

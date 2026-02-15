@@ -236,9 +236,12 @@ export default function ComputeShare() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <p className="text-3xl font-display font-bold">
-                {Number(walletBalance || 0).toFixed(6)} {walletSymbol}
-              </p>
+              <div className="flex items-center gap-2">
+                <img src="https://cryptologos.cc/logos/usd-coin-usdc-logo.png" alt="USDC" className="h-5 w-5" />
+                <p className="text-3xl font-display font-bold">
+                  {Number(walletBalance || 0).toFixed(2)} {walletSymbol}
+                </p>
+              </div>
               <p className="text-xs text-muted-foreground mt-1">
                 Live Arbitrum Sepolia wallet balance
               </p>
