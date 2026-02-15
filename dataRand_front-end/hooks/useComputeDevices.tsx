@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { useAuth } from "./useAuth";
 import { useToast } from "./use-toast";
 import { useGlobalMetrics } from "./useGlobalMetrics";
+import { api } from "@/lib/datarand";
 
 export interface DeviceState {
   isActive: boolean;
@@ -11,6 +12,7 @@ export interface DeviceState {
   sessionId: string | null;
   sessionMinutes: number;
   demandStatus: 'none' | 'waiting' | 'connected';
+  deviceId?: string | null;
 }
 
 export function useComputeDevices() {
@@ -23,7 +25,8 @@ export function useComputeDevices() {
     isInstalled: true, // Hardcoded to true
     sessionId: null,
     sessionMinutes: 0,
-    demandStatus: 'none'
+    demandStatus: 'none',
+    deviceId: null
   });
   
   const [laptopState, setLaptopState] = useState<DeviceState>({
@@ -31,7 +34,8 @@ export function useComputeDevices() {
     isInstalled: true, // Hardcoded to true
     sessionId: null,
     sessionMinutes: 0,
-    demandStatus: 'none'
+    demandStatus: 'none',
+    deviceId: null
   });
   
   const [loading, setLoading] = useState(true);
@@ -47,6 +51,76 @@ export function useComputeDevices() {
   const laptopIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const phoneStartRef = useRef<Date | null>(null);
   const laptopStartRef = useRef<Date | null>(null);
+  const phoneHeartbeatRef = useRef<NodeJS.Timeout | null>(null);
+  const laptopHeartbeatRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Helper: Detect device specs
+  const detectDeviceSpecs = async () => {
+    const userAgent = navigator.userAgent;
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent);
+    
+    let os = 'Unknown';
+    if (/Windows/i.test(userAgent)) os = 'Windows';
+    else if (/Mac/i.test(userAgent)) os = 'macOS';
+    else if (/Linux/i.test(userAgent)) os = 'Linux';
+    else if (/Android/i.test(userAgent)) os = 'Android';
+    else if (/iPhone|iPad/i.test(userAgent)) os = 'iOS';
+    
+    const deviceType = isMobile ? 'phone' : 'laptop';
+    const deviceName = `${os} ${deviceType === 'phone' ? 'Phone' : 'Computer'}`;
+    
+    const ram_gb = (navigator as any).deviceMemory || (isMobile ? 4 : 8);
+    const cpu_cores = navigator.hardwareConcurrency || (isMobile ? 4 : 8);
+    let storage_gb = 128;
+    
+    if ('storage' in navigator && 'estimate' in (navigator as any).storage) {
+      try {
+        const estimate = await (navigator as any).storage.estimate();
+        storage_gb = Math.round((estimate.quota || 0) / (1024 ** 3));
+      } catch (e) {
+        console.log('Storage estimate not available');
+      }
+    }
+    
+    return { device_name: deviceName, device_type: deviceType, ram_gb, cpu_cores, storage_gb };
+  };
+
+  // Helper: Start heartbeat
+  const startHeartbeat = async (device: 'phone' | 'laptop', deviceId: string) => {
+    const heartbeatRef = device === 'phone' ? phoneHeartbeatRef : laptopHeartbeatRef;
+    
+    if (heartbeatRef.current) {
+      clearInterval(heartbeatRef.current);
+    }
+    
+    heartbeatRef.current = setInterval(async () => {
+      try {
+        await api.sendHeartbeat(deviceId);
+        console.log(`Heartbeat sent for ${device}`);
+      } catch (error) {
+        console.error(`Heartbeat failed for ${device}:`, error);
+      }
+    }, 90000); // 90 seconds
+  };
+
+  // Helper: Stop heartbeat
+  const stopHeartbeat = async (device: 'phone' | 'laptop', deviceId: string | null) => {
+    const heartbeatRef = device === 'phone' ? phoneHeartbeatRef : laptopHeartbeatRef;
+    
+    if (heartbeatRef.current) {
+      clearInterval(heartbeatRef.current);
+      heartbeatRef.current = null;
+    }
+    
+    if (deviceId) {
+      try {
+        await api.deactivateDevice(deviceId);
+        console.log(`Device deactivated: ${device}`);
+      } catch (error) {
+        console.error(`Failed to deactivate ${device}:`, error);
+      }
+    }
+  };
 
   // Detect current device
   useEffect(() => {
@@ -213,6 +287,8 @@ export function useComputeDevices() {
         // Stop other device if somehow active
         if (otherState.isActive) {
           const otherDevice = isPhone ? 'laptop' : 'phone';
+          const otherDeviceId = isPhone ? laptopState.deviceId : phoneState.deviceId;
+          await stopHeartbeat(otherDevice, otherDeviceId || null);
           localStorage.setItem(`${otherDevice}ComputeActive`, 'false');
           localStorage.removeItem(`${otherDevice}ComputeStartTime`);
           setOtherState(prev => ({
@@ -220,8 +296,20 @@ export function useComputeDevices() {
             isActive: false,
             sessionId: null,
             sessionMinutes: 0,
-            demandStatus: 'none'
+            demandStatus: 'none',
+            deviceId: null
           }));
+        }
+        
+        // Register device and start heartbeat
+        let registeredDeviceId = null;
+        try {
+          const specs = await detectDeviceSpecs();
+          const response = await api.registerDevice(specs);
+          registeredDeviceId = response.data.id;
+          await startHeartbeat(device, registeredDeviceId);
+        } catch (error) {
+          console.error('Failed to register device:', error);
         }
         
         // Start current device
@@ -240,7 +328,8 @@ export function useComputeDevices() {
           isActive: true,
           sessionId: `simulated-${device}-session`,
           sessionMinutes: 0,
-          demandStatus: 'waiting'
+          demandStatus: 'waiting',
+          deviceId: registeredDeviceId
         }));
         
         // Simulate connecting to workload after 2-5 seconds
@@ -253,6 +342,9 @@ export function useComputeDevices() {
           description: "You're now earning from your idle resources. 15% goes to education."
         });
       } else {
+        // Stop heartbeat
+        await stopHeartbeat(device, currentState.deviceId || null);
+        
         // End session and save to database
         localStorage.setItem(`${device}ComputeActive`, 'false');
         localStorage.removeItem(`${device}ComputeStartTime`);
@@ -280,7 +372,8 @@ export function useComputeDevices() {
           isActive: false,
           sessionId: null,
           sessionMinutes: 0,
-          demandStatus: 'none'
+          demandStatus: 'none',
+          deviceId: null
         }));
         
         if (isPhone) {
@@ -300,6 +393,14 @@ export function useComputeDevices() {
       setToggling(null);
     }
   };
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (phoneHeartbeatRef.current) clearInterval(phoneHeartbeatRef.current);
+      if (laptopHeartbeatRef.current) clearInterval(laptopHeartbeatRef.current);
+    };
+  }, []);
 
   return {
     phoneState,
