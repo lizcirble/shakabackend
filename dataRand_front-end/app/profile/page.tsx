@@ -140,9 +140,21 @@ function ProfilePageContent() {
           </CardHeader>
           <CardContent className="space-y-3 sm:space-y-4">
             <p className="text-muted-foreground text-sm sm:text-base">Your current skill tier is:</p>
-            <Badge className="text-base sm:text-lg px-3 py-1" variant="secondary">Beginner</Badge>
+            <Badge className="text-base sm:text-lg px-3 py-1" variant={
+              totalTasksCompleted >= 50 ? "default" : 
+              totalTasksCompleted >= 10 ? "secondary" : 
+              "outline"
+            }>
+              {totalTasksCompleted >= 50 ? "Expert" : 
+               totalTasksCompleted >= 10 ? "Verified" : 
+               "Beginner"}
+            </Badge>
             <p className="text-xs sm:text-sm text-muted-foreground">
-              Complete more tasks accurately to advance to &apos;Verified&apos; and &apos;Expert&apos; tiers, unlocking higher-value work.
+              {totalTasksCompleted >= 50 
+                ? "You've reached Expert tier! You have access to the highest-value tasks."
+                : totalTasksCompleted >= 10
+                ? `Complete ${50 - totalTasksCompleted} more tasks to reach Expert tier.`
+                : `Complete ${10 - totalTasksCompleted} more tasks to reach Verified tier.`}
             </p>
           </CardContent>
         </Card>

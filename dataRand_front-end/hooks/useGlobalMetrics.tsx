@@ -86,12 +86,14 @@ export function GlobalMetricsProvider({ children }: { children: ReactNode }) {
           return sum;
         }, 0);
 
-        // Convert from Wei/smallest unit to dollars
-        // If stored in Wei (18 decimals), divide by 10^18
-        // If stored in USDC smallest unit (6 decimals), divide by 10^6
-        const totalEarningsRaw = profileData.total_earnings || 0;
-        const totalEarnings = totalEarningsRaw > 1000000 
-          ? totalEarningsRaw / 1000000  // Assume USDC (6 decimals)
+        // Convert from smallest unit to dollars
+        // USDC uses 6 decimals, so divide by 1,000,000
+        const totalEarningsRaw = Number(profileData.total_earnings || 0);
+        const computeEarningsRaw = Number(profileData.compute_earnings || 0);
+        
+        // If value is very large (> 1000), assume it's in smallest unit
+        const totalEarnings = totalEarningsRaw > 1000 
+          ? totalEarningsRaw / 1000000  // Convert from USDC smallest unit (6 decimals)
           : totalEarningsRaw;  // Already in dollars
         
         const educationContribution = totalEarnings * 0.15;
