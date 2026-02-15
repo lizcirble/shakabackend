@@ -6,7 +6,7 @@ import {
     deactivateDevice,
     getUserDevices
 } from '../controllers/networkController.js';
-import { authenticate } from '../middleware/authMiddleware.js';
+import { authMiddleware } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
@@ -14,9 +14,9 @@ const router = express.Router();
 router.get('/stats', getNetworkStats);
 
 // Protected endpoints - require authentication
-router.post('/devices/register', authenticate, registerDevice);
-router.post('/devices/:deviceId/heartbeat', authenticate, sendHeartbeat);
-router.post('/devices/:deviceId/deactivate', authenticate, deactivateDevice);
-router.get('/devices', authenticate, getUserDevices);
+router.post('/devices/register', authMiddleware, registerDevice);
+router.post('/devices/:deviceId/heartbeat', authMiddleware, sendHeartbeat);
+router.post('/devices/:deviceId/deactivate', authMiddleware, deactivateDevice);
+router.get('/devices', authMiddleware, getUserDevices);
 
 export default router;

@@ -1,6 +1,7 @@
 import config from '../config/index.js';
 import { logger } from '../utils/logger.js';
 import redis from '../config/upstashRedis.js';
+import { addTaskExpirationJob as initTaskExpiration } from './taskExpirationJob.js';
 
 let isRedisConfigured = false;
 
@@ -30,11 +31,12 @@ const addReputationAnchoringJob = async () => {
 };
 
 const addTaskExpirationJob = async () => {
-    if (!isRedisConfigured) {
-        logger.warn('Redis not configured. Task expiration job disabled.');
-        return;
+    try {
+        await initTaskExpiration();
+        logger.info('Task expiration job initialized successfully.');
+    } catch (error) {
+        logger.error(`Failed to initialize task expiration job: ${error.message}`);
     }
-    logger.info('Task expiration job initialized with Upstash Redis.');
 };
 
 export { addReputationAnchoringJob, addTaskExpirationJob };

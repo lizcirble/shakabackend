@@ -108,15 +108,6 @@ export function DeviceToggleCard({
     };
   }, [isEnabled]);
 
-          if (!response.ok) continue;
-
-          const payload = await response.json();
-          const parsed = parseMetrics(payload);
-          if (!parsed) continue;
-
-          if (mounted) {
-            setCpuUsage(parsed.cpu);
-            setMemoryUsage(parsed.memory);
   const getDemandStatusText = () => {
     if (!isEnabled) return null;
     if (demandStatus === 'connected') return 'Connected to workload';
