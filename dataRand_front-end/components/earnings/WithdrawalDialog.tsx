@@ -161,7 +161,13 @@ export function WithdrawalDialog({
               <SelectContent>
                 {paymentMethods.map((method) => (
                   <SelectItem key={method.id} value={method.id}>
-                    {method.name} ({method.description})
+                    <div className="flex items-center gap-2">
+                      <method.icon className="h-4 w-4" />
+                      <span>{method.name}</span>
+                      <span className="text-xs text-muted-foreground">
+                        ({method.description})
+                      </span>
+                    </div>
                   </SelectItem>
                 ))}
               </SelectContent>

@@ -493,10 +493,7 @@ export default function CreateTask() {
                         const Icon = taskTypeIcons[type.name] || Brain;
                         return (
                           <SelectItem key={type.id} value={type.id}>
-                            <div className="flex items-center gap-2">
-                              <Icon className="h-4 w-4" />
-                              {type.description}
-                            </div>
+                            <div className="flex items-center gap-2"><Icon className="h-4 w-4" />{type.description}</div>
                           </SelectItem>
                         );
                       })}

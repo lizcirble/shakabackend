@@ -47,13 +47,22 @@ export function TaskFilters({
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="all">
-            All Tasks
+            <div className="flex items-center gap-2">
+              <TaskIcon size={16} />
+              All Tasks
+            </div>
           </SelectItem>
-          {taskTypes.map((type) => (
-            <SelectItem key={type.id} value={type.id}>
-              {type.name.replace("_", " ").replace(/\b\w/g, (l) => l.toUpperCase())}
-            </SelectItem>
-          ))}
+          {taskTypes.map((type) => {
+            const Icon = taskTypeIcons[type.name] || TaskIcon;
+            return (
+              <SelectItem key={type.id} value={type.id}>
+                <div className="flex items-center gap-2">
+                  <Icon size={16} />
+                  {type.name.replace("_", " ").replace(/\b\w/g, (l) => l.toUpperCase())}
+                </div>
+              </SelectItem>
+            );
+          })}
         </SelectContent>
       </Select>
     );
