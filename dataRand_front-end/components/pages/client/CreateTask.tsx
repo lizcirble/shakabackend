@@ -489,11 +489,17 @@ export default function CreateTask() {
                   <Select value={formData.taskTypeId} onValueChange={(v) => setFormData({ ...formData, taskTypeId: v })}>
                     <SelectTrigger><SelectValue placeholder="Select task type" /></SelectTrigger>
                     <SelectContent>
-                      {taskTypes.map((type) => (
-                        <SelectItem key={type.id} value={type.id}>
-                          {type.description}
-                        </SelectItem>
-                      ))}
+                      {taskTypes.map((type) => {
+                        const Icon = taskTypeIcons[type.name] || Brain;
+                        return (
+                          <SelectItem key={type.id} value={type.id}>
+                            <span className="flex items-center gap-2">
+                              <Icon className="h-4 w-4" />
+                              {type.description}
+                            </span>
+                          </SelectItem>
+                        );
+                      })}
                     </SelectContent>
                   </Select>
                 </div>
