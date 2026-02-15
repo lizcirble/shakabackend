@@ -103,6 +103,13 @@ class DataRandAPI {
     });
   }
 
+  async confirmTaskFunding(taskId, txHash) {
+    return this.request(`/tasks/${taskId}/confirm-funding`, {
+      method: 'POST',
+      body: JSON.stringify({ txHash }),
+    });
+  }
+
   async getMyTasks() {
     return this.request('/tasks');
   }

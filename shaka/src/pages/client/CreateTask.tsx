@@ -254,15 +254,50 @@ export default function CreateTask() {
   };
 
   const handleFundTask = async () => {
-    if (!createdTask || !walletConnected) return;
+    if (!createdTask || !walletConnected || !walletAddress) return;
 
     setLoading(true);
 
     try {
-      // Call backend to fund task
-      const result = await api.fundTask(createdTask.id);
+      // Step 1: Get transaction data from backend
+      const fundingData = await api.fundTask(createdTask.id);
       
-      setFundingTx(result.txHash || "completed");
+      if (!fundingData?.txData) {
+        throw new Error("Failed to prepare transaction data.");
+      }
+
+      // Step 2: Get the Ethereum provider
+      const provider = new ethers.BrowserProvider(window.ethereum);
+      const signer = await provider.getSigner();
+
+      // Step 3: Send the transaction
+      toast({
+        title: "Sign Transaction",
+        description: "Please sign the transaction in your wallet to fund the task.",
+      });
+
+      const tx = await signer.sendTransaction({
+        to: fundingData.txData.to,
+        data: fundingData.txData.data,
+        value: fundingData.txData.value,
+      });
+
+      // Step 4: Wait for confirmation
+      toast({
+        title: "Transaction Sent",
+        description: "Waiting for confirmation...",
+      });
+
+      const receipt = await tx.wait();
+
+      if (!receipt || receipt.status === 0) {
+        throw new Error("Transaction failed on blockchain.");
+      }
+
+      // Step 5: Confirm funding with backend
+      await api.confirmTaskFunding(createdTask.id, tx.hash);
+      
+      setFundingTx(tx.hash);
       
       toast({
         title: "Task funded!",
@@ -275,9 +310,16 @@ export default function CreateTask() {
       }, 2000);
     } catch (error: any) {
       console.error("Fund task error:", error);
+      
+      let errorMessage = error.message || "Failed to fund task.";
+      
+      if (error.code === 4001 || errorMessage.includes("rejected") || errorMessage.includes("denied")) {
+        errorMessage = "You rejected the transaction. Please try again.";
+      }
+      
       toast({
         title: "Funding failed",
-        description: error.message || "Failed to fund task.",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
