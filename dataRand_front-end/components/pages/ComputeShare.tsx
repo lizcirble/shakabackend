@@ -16,6 +16,7 @@ import { ChevronDown, Heart } from "lucide-react";
 import { GeometricBackground, NdebeleBorder, CornerAccent } from "@/components/ui/GeometricBackground";
 import { DeviceToggleCard } from "@/components/compute/DeviceToggleCard";
 import { NetworkStats } from "@/components/compute/NetworkStats";
+import { RealDeviceInfo } from "@/components/compute/RealDeviceInfo";
 
 const COST_PER_CHILD = 13;
 const OUT_OF_SCHOOL_CHILDREN = 98000000;
@@ -210,6 +211,9 @@ export default function ComputeShare() {
 
         {/* Network Stats */}
         <NetworkStats />
+
+        {/* Real Device Info */}
+        <RealDeviceInfo />
 
         {/* Earnings Stats */}
         <div className="grid gap-4 md:grid-cols-3">

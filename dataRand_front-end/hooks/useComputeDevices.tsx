@@ -69,10 +69,12 @@ export function useComputeDevices() {
     const deviceType = isMobile ? 'phone' : 'laptop';
     const deviceName = `${os} ${deviceType === 'phone' ? 'Phone' : 'Computer'}`;
     
-    const ram_gb = (navigator as any).deviceMemory || (isMobile ? 4 : 8);
-    const cpu_cores = navigator.hardwareConcurrency || (isMobile ? 4 : 8);
-    let storage_gb = 128;
+    // Get REAL device specs from browser APIs
+    const ram_gb = (navigator as any).deviceMemory || 0; // Real RAM in GB (Chrome/Edge only)
+    const cpu_cores = navigator.hardwareConcurrency || 0; // Real CPU cores
     
+    // Get real storage estimate
+    let storage_gb = 0;
     if ('storage' in navigator && 'estimate' in (navigator as any).storage) {
       try {
         const estimate = await (navigator as any).storage.estimate();
@@ -81,6 +83,8 @@ export function useComputeDevices() {
         console.log('Storage estimate not available');
       }
     }
+    
+    console.log('Real device specs detected:', { ram_gb, cpu_cores, storage_gb });
     
     return { device_name: deviceName, device_type: deviceType, ram_gb, cpu_cores, storage_gb };
   };
