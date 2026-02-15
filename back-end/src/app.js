@@ -29,10 +29,12 @@ import authRoutes from './routes/authRoutes.js';
 import taskRoutes from './routes/taskRoutes.js';
 import submissionRoutes from './routes/submissionRoutes.js';
 import computeRoutes from './routes/computeRoutes.js';
+import networkRoutes from './routes/networkRoutes.js';
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/tasks', taskRoutes);
 app.use('/api/v1/submissions', submissionRoutes);
 app.use('/api/v1/compute', computeRoutes);
+app.use('/api/v1/network', networkRoutes);
 
 
 // Centralized error handling

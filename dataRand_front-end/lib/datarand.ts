@@ -140,6 +140,34 @@ class DataRandAPI {
   async getMyAssignedTasks() {
     return this.request('/tasks/my-assignments');
   }
+
+  // Network & Compute Devices
+  async getNetworkStats(): Promise<any> {
+    return this.request('/network/stats');
+  }
+
+  async registerDevice(deviceData: any): Promise<any> {
+    return this.request('/network/devices/register', {
+      method: 'POST',
+      body: JSON.stringify(deviceData),
+    });
+  }
+
+  async sendHeartbeat(deviceId: string): Promise<any> {
+    return this.request(`/network/devices/${deviceId}/heartbeat`, {
+      method: 'POST',
+    });
+  }
+
+  async deactivateDevice(deviceId: string): Promise<any> {
+    return this.request(`/network/devices/${deviceId}/deactivate`, {
+      method: 'POST',
+    });
+  }
+
+  async getUserDevices(): Promise<any> {
+    return this.request('/network/devices');
+  }
 }
 
 export const api = new DataRandAPI();
