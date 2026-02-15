@@ -74,12 +74,12 @@ alter table public.compute_devices enable row level security;
 
 create policy "Users can view their own devices"
   on public.compute_devices for select
-  using (auth.uid() in (select auth_id from public.profiles where id = user_id));
+  using (user_id in (select id from public.profiles where auth_id::text = auth.uid()::text));
 
 create policy "Users can insert their own devices"
   on public.compute_devices for insert
-  with check (auth.uid() in (select auth_id from public.profiles where id = user_id));
+  with check (user_id in (select id from public.profiles where auth_id::text = auth.uid()::text));
 
 create policy "Users can update their own devices"
   on public.compute_devices for update
-  using (auth.uid() in (select auth_id from public.profiles where id = user_id));
+  using (user_id in (select id from public.profiles where auth_id::text = auth.uid()::text));
