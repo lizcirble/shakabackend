@@ -505,7 +505,7 @@ useEffect(() => {
                         controls 
                         className="w-full max-h-64 object-contain"
                         onError={(e) => {
-                          console.error('Video failed to load:', answerDialog.assignment.task.media_url);
+                          console.error('Video failed to load:', answerDialog.assignment?.task.media_url);
                           e.currentTarget.style.display = 'none';
                         }}
                       />
@@ -516,13 +516,13 @@ useEffect(() => {
                         className="w-full max-h-64 object-contain"
                         loading="lazy"
                         onError={(e) => {
-                          console.error('Image failed to load:', answerDialog.assignment.task.media_url);
+                          console.error('Image failed to load:', answerDialog.assignment?.task.media_url);
                           e.currentTarget.style.display = 'none';
                           const parent = e.currentTarget.parentElement;
                           if (parent) {
                             parent.innerHTML = `<div class="p-4 text-center text-sm text-muted-foreground">
                               <p>Image failed to load</p>
-                              <a href="${answerDialog.assignment.task.media_url}" target="_blank" class="text-primary underline">Open in new tab</a>
+                              <a href="${answerDialog.assignment?.task.media_url}" target="_blank" class="text-primary underline">Open in new tab</a>
                             </div>`;
                           }
                         }}
@@ -707,10 +707,6 @@ function AssignmentGrid({
                         console.error('Image thumbnail failed:', assignment.task?.media_url);
                         e.currentTarget.style.display = 'none';
                       }}
-                    />
-                  )}
-                </div>
-              )}
                     />
                   )}
                 </div>
