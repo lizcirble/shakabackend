@@ -26,22 +26,28 @@ const loginOrRegister = asyncHandler(async (req, res) => {
 
     // 3. Update device fingerprint and wallet address
     const walletAddress = privyUser.wallet?.address || null;
-    const targetTable = user.source_table === 'profiles' ? 'profiles' : 'users';
-    const updatePayload = targetTable === 'profiles'
-        ? { updated_at: new Date().toISOString() }
-        : { 
-            last_fingerprint: deviceFingerprint, 
-            last_login_at: new Date(),
-            ...(walletAddress && { wallet_address: walletAddress })
-          };
+    const isEmbedded = privyUser.wallet?.walletType === 'embedded';
+
+    const updatePayload = {
+        last_fingerprint: deviceFingerprint,
+        last_login_at: new Date(),
+    };
+
+    if (walletAddress) {
+        if (isEmbedded) {
+            updatePayload.embedded_wallet_address = walletAddress;
+        } else {
+            updatePayload.wallet_address = walletAddress;
+        }
+    }
 
     const { error: updateError } = await supabase
-        .from(targetTable)
+        .from('users')
         .update(updatePayload)
         .eq('id', user.id);
 
     if (updateError) {
-        logger.error(`Failed to update login metadata on ${targetTable}: ${updateError.message}`);
+        logger.error(`Failed to update login metadata: ${updateError.message}`);
     } else if (walletAddress) {
         logger.info(`Updated wallet address for user ${user.id}: ${walletAddress}`);
     }

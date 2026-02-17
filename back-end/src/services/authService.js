@@ -31,34 +31,14 @@ const findUserByPrivyDid = async (privyDid) => {
         .from('users')
         .select('*')
         .eq('privy_did', privyDid)
-        .limit(1);
+        .single();
 
-    if (error) {
-        // Fallback for deployments that use `profiles.auth_id` instead of `users.privy_did`.
-        logger.warn(`users lookup failed for ${privyDid}, falling back to profiles: ${error.message}`);
-
-        const { data: profileData, error: profileError } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('auth_id', privyDid)
-            .limit(1);
-
-        if (profileError) {
-            logger.error(`profiles fallback failed for ${privyDid}: ${profileError.message}`);
-            throw new ApiError(500, 'Failed to query user from database.');
-        }
-
-        if (!profileData?.[0]) {
-            return null;
-        }
-
-        return {
-            ...profileData[0],
-            privy_did: profileData[0].auth_id,
-            source_table: 'profiles',
-        };
+    if (error && error.code !== 'PGRST116') { // PGRST116: row not found
+        logger.error(`Error finding user by privy DID: ${error.message}`);
+        throw new ApiError(500, 'Failed to query user from database.');
     }
-    return data?.[0] || null;
+
+    return data;
 };
 
 /**
@@ -68,13 +48,15 @@ const findUserByPrivyDid = async (privyDid) => {
  */
 const createNewUser = async (privyUser) => {
     const walletAddress = privyUser.wallet?.address || null;
-    
+    // NOTE: Assuming the property is `walletType`. It could be `wallet_type`.
+    const isEmbeddedWallet = privyUser.wallet?.walletType === 'embedded';
+    const newUserId = uuidv4();
+
     const newUser = {
-        id: uuidv4(),
+        id: newUserId,
         privy_did: privyUser.userId,
-        wallet_address: walletAddress,
-        // Additional fields can be populated from privyUser if needed
-        // e.g., email: privyUser.email?.address
+        wallet_address: !isEmbeddedWallet ? walletAddress : null,
+        embedded_wallet_address: isEmbeddedWallet ? walletAddress : null,
     };
 
     const { data, error } = await supabase
@@ -84,34 +66,25 @@ const createNewUser = async (privyUser) => {
         .single();
 
     if (error) {
-        logger.warn(`users insert failed, trying profiles fallback: ${error.message}`);
-
-        const fallbackProfile = {
-            id: uuidv4(),
-            auth_id: privyUser.userId,
-            email: privyUser?.email?.address || null,
-            full_name: null,
-            avatar_url: null,
-            created_at: new Date().toISOString(),
-        };
-
-        const { data: profileData, error: profileError } = await supabase
-            .from('profiles')
-            .insert(fallbackProfile)
-            .select()
-            .single();
-
-        if (profileError) {
-            logger.error(`Failed to create fallback profile: ${profileError.message}`);
-            throw new ApiError(500, 'Failed to create user in database.');
+        logger.error(`Failed to create user in DB: ${error.message}`);
+        if (error.code === '23505') { // unique_violation
+             logger.warn(`User with privy_did ${privyUser.userId} already exists.`);
+             return findUserByPrivyDid(privyUser.userId);
         }
-
-        return {
-            ...profileData,
-            privy_did: profileData.auth_id,
-            source_table: 'profiles',
-        };
+        throw new ApiError(500, 'Failed to save user to database.');
     }
+
+    // Also create a corresponding profile
+    const { error: profileError } = await supabase.from('profiles').insert({
+        id: newUserId, // Use the same ID as the user
+        auth_id: privyUser.userId,
+        email: privyUser.email?.address || null,
+    });
+
+    if (profileError) {
+        logger.warn(`Could not create profile for new user ${data.id}: ${profileError.message}`);
+    }
+
     return data;
 };
 
