@@ -44,17 +44,21 @@ export function useUser() {
   useEffect(() => {
     const setAuthToken = async () => {
       if (authenticated && privyUser) {
-        const accessToken = await getAccessToken()
-        if (!accessToken) return
-
         try {
+          const accessToken = await getAccessToken()
+          if (!accessToken) {
+            console.warn("No Privy access token available")
+            return
+          }
+
           // Exchange Privy token for DataRand backend JWT.
           const loginResult = await api.login(accessToken, getDeviceFingerprint())
           if (loginResult?.token) {
             localStorage.setItem("datarand_token", loginResult.token)
           }
         } catch (error) {
-          console.error("Failed to initialize backend session:", error)
+          // Silently handle backend auth errors - backend may not be configured yet
+          localStorage.removeItem("datarand_token")
         }
       } else {
         await supabase.auth.signOut()

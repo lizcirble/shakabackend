@@ -61,6 +61,17 @@ class DataRandAPI {
     if (!response.ok) {
       const error = await response.json().catch(() => ({ message: 'Request failed' }));
       const message = error.message || `HTTP ${response.status}`;
+      
+      // Clear invalid token on 401
+      if (response.status === 401 && typeof window !== 'undefined') {
+        localStorage.removeItem('datarand_token');
+      }
+      
+      // Suppress auth errors - backend may not be ready
+      if (endpoint === '/auth/login' && response.status === 401) {
+        throw new Error('Backend authentication unavailable');
+      }
+      
       throw new Error(`${message} (${endpoint})`);
     }
 

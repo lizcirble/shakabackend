@@ -126,8 +126,8 @@ export default function SettingsPage() {
       });
 
       if (error) {
-        console.error('RPC error details:', error);
-        throw error;
+        console.error('RPC error details:', JSON.stringify(error, null, 2));
+        throw new Error(error.message || 'Failed to delete account');
       }
 
       toast({
@@ -139,7 +139,7 @@ export default function SettingsPage() {
       await supabase.auth.signOut();
       router.push('/');
     } catch (error) {
-      console.error('Delete account error:', error);
+      console.error('Delete account error:', error instanceof Error ? error.message : JSON.stringify(error));
       const errorMessage = error instanceof Error ? error.message : 'Failed to delete account';
       toast({
         title: "Error",
@@ -435,60 +435,62 @@ export default function SettingsPage() {
                 <AlertTriangle className="h-5 w-5" />
                 Delete Account
               </DialogTitle>
-              <DialogDescription className="space-y-3 pt-2">
-                {!deleteLoading ? (
-                  <>
-                    <p className="font-semibold">This action cannot be undone.</p>
-                    <p>Deleting your account will permanently remove:</p>
-                    <ul className="list-disc list-inside space-y-1 text-sm">
-                      <li>Your profile and personal information</li>
-                      <li>All task history and assignments</li>
-                      <li>Your earnings and transaction records</li>
-                      <li>All notifications and messages</li>
-                      <li>Compute session history</li>
-                    </ul>
-                    <p className="text-sm font-medium pt-2">
-                      Any pending withdrawals will be cancelled. Make sure to withdraw your funds before deleting your account.
-                    </p>
-                  </>
-                ) : (
-                  <div className="space-y-4 py-4">
-                    {[
-                      { step: 1, label: "Deleting notifications", icon: "🔔" },
-                      { step: 2, label: "Removing transactions", icon: "💰" },
-                      { step: 3, label: "Clearing task history", icon: "📋" },
-                      { step: 4, label: "Deleting compute sessions", icon: "💻" },
-                      { step: 5, label: "Removing profile data", icon: "👤" },
-                      { step: 6, label: "Finalizing deletion", icon: "🗑️" }
-                    ].map(({ step, label, icon }) => (
-                      <div
-                        key={step}
-                        className={`flex items-center gap-3 transition-all duration-300 ${
-                          deletingStep >= step
-                            ? "opacity-100 translate-x-0"
-                            : "opacity-30 translate-x-2"
-                        }`}
-                      >
-                        <span className="text-2xl">{icon}</span>
-                        <div className="flex-1">
-                          <p className={`text-sm font-medium ${
-                            deletingStep === step ? "text-destructive" : ""
-                          }`}>
-                            {label}
-                          </p>
-                          {deletingStep > step && (
-                            <p className="text-xs text-muted-foreground">✓ Completed</p>
-                          )}
-                          {deletingStep === step && (
-                            <div className="h-1 w-full bg-muted rounded-full mt-1 overflow-hidden">
-                              <div className="h-full bg-destructive animate-pulse w-full" />
-                            </div>
-                          )}
+              <DialogDescription asChild>
+                <div className="space-y-3 pt-2 text-sm text-muted-foreground">
+                  {!deleteLoading ? (
+                    <>
+                      <p className="font-semibold">This action cannot be undone.</p>
+                      <p>Deleting your account will permanently remove:</p>
+                      <ul className="list-disc list-inside space-y-1 text-sm">
+                        <li>Your profile and personal information</li>
+                        <li>All task history and assignments</li>
+                        <li>Your earnings and transaction records</li>
+                        <li>All notifications and messages</li>
+                        <li>Compute session history</li>
+                      </ul>
+                      <p className="text-sm font-medium pt-2">
+                        Any pending withdrawals will be cancelled. Make sure to withdraw your funds before deleting your account.
+                      </p>
+                    </>
+                  ) : (
+                    <div className="space-y-4 py-4">
+                      {[
+                        { step: 1, label: "Deleting notifications", icon: "🔔" },
+                        { step: 2, label: "Removing transactions", icon: "💰" },
+                        { step: 3, label: "Clearing task history", icon: "📋" },
+                        { step: 4, label: "Deleting compute sessions", icon: "💻" },
+                        { step: 5, label: "Removing profile data", icon: "👤" },
+                        { step: 6, label: "Finalizing deletion", icon: "🗑️" }
+                      ].map(({ step, label, icon }) => (
+                        <div
+                          key={step}
+                          className={`flex items-center gap-3 transition-all duration-300 ${
+                            deletingStep >= step
+                              ? "opacity-100 translate-x-0"
+                              : "opacity-30 translate-x-2"
+                          }`}
+                        >
+                          <span className="text-2xl">{icon}</span>
+                          <div className="flex-1">
+                            <p className={`text-sm font-medium ${
+                              deletingStep === step ? "text-destructive" : ""
+                            }`}>
+                              {label}
+                            </p>
+                            {deletingStep > step && (
+                              <p className="text-xs text-muted-foreground">✓ Completed</p>
+                            )}
+                            {deletingStep === step && (
+                              <div className="h-1 w-full bg-muted rounded-full mt-1 overflow-hidden">
+                                <div className="h-full bg-destructive animate-pulse w-full" />
+                              </div>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
+                      ))}
+                    </div>
+                  )}
+                </div>
               </DialogDescription>
             </DialogHeader>
             {!deleteLoading && (
