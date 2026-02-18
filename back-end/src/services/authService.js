@@ -22,9 +22,9 @@ const verifyPrivyToken = async (privyAccessToken) => {
         const verifiedClaims = await privyClient.verifyAuthToken(privyAccessToken);
         logger.info(`Token verified, claims: ${JSON.stringify(verifiedClaims)}`);
         
-        // Extract user ID from sub (may be "did:privy:xxx" format)
-        let userId = verifiedClaims.sub;
-        if (userId.startsWith('did:privy:')) {
+        // Extract user ID from userId field (may be "did:privy:xxx" format)
+        let userId = verifiedClaims.userId;
+        if (userId && userId.startsWith('did:privy:')) {
             userId = userId.replace('did:privy:', '');
         }
         logger.info(`Fetching user with ID: ${userId}`);
