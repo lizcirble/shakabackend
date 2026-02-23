@@ -45,7 +45,10 @@ export function useUser() {
     const setAuthToken = async () => {
       if (authenticated && privyUser) {
         try {
+          // Always get a fresh token - don't rely on cached values
           const accessToken = await getAccessToken()
+          console.log("Privy access token obtained:", accessToken?.substring(0, 20) + "...")
+          
           if (!accessToken) {
             console.warn("No Privy access token available")
             return
@@ -55,9 +58,10 @@ export function useUser() {
           const loginResult = await api.login(accessToken, getDeviceFingerprint())
           if (loginResult?.token) {
             localStorage.setItem("datarand_token", loginResult.token)
+            console.log("DataRand token stored successfully")
           }
         } catch (error) {
-          // Silently handle backend auth errors - backend may not be configured yet
+          console.error("Backend auth error:", error)
           localStorage.removeItem("datarand_token")
         }
       } else {
