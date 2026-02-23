@@ -60,14 +60,41 @@ export function useComputeDevices() {
     const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent);
     
     let os = 'Unknown';
-    if (/Windows/i.test(userAgent)) os = 'Windows';
-    else if (/Mac/i.test(userAgent)) os = 'macOS';
+    let deviceModel = '';
+    
+    // Detect OS and device model
+    if (/Windows NT 10/i.test(userAgent)) os = 'Windows 10';
+    else if (/Windows NT 11/i.test(userAgent)) os = 'Windows 11';
+    else if (/Windows/i.test(userAgent)) os = 'Windows';
+    else if (/Mac OS X (\d+[._]\d+)/i.test(userAgent)) {
+      const match = userAgent.match(/Mac OS X (\d+[._]\d+)/i);
+      os = match ? `macOS ${match[1].replace('_', '.')}` : 'macOS';
+    }
     else if (/Linux/i.test(userAgent)) os = 'Linux';
-    else if (/Android/i.test(userAgent)) os = 'Android';
-    else if (/iPhone|iPad/i.test(userAgent)) os = 'iOS';
+    else if (/Android (\d+)/i.test(userAgent)) {
+      const match = userAgent.match(/Android (\d+)/i);
+      os = match ? `Android ${match[1]}` : 'Android';
+      
+      // Try to extract device model for Android
+      const modelMatch = userAgent.match(/\(([^)]+)\)/);
+      if (modelMatch) {
+        const parts = modelMatch[1].split(';');
+        deviceModel = parts[parts.length - 1]?.trim() || '';
+      }
+    }
+    else if (/iPhone/i.test(userAgent)) {
+      os = 'iOS';
+      deviceModel = 'iPhone';
+    }
+    else if (/iPad/i.test(userAgent)) {
+      os = 'iOS';
+      deviceModel = 'iPad';
+    }
     
     const deviceType = isMobile ? 'phone' : 'laptop';
-    const deviceName = `${os} ${deviceType === 'phone' ? 'Phone' : 'Computer'}`;
+    const deviceName = deviceModel 
+      ? `${deviceModel} (${os})` 
+      : `${os} ${deviceType === 'phone' ? 'Phone' : 'Computer'}`;
     
     // Get REAL device specs from browser APIs
     let ram_gb = (navigator as any).deviceMemory || 0; // Real RAM in GB (Chrome/Edge only)

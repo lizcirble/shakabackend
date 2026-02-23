@@ -507,20 +507,20 @@ function Earnings() {
               <CardHeader className="pb-2 p-3 sm:p-6">
                 <CardDescription className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
                   <Wallet className="h-3 w-3 sm:h-4 sm:w-4" />
-                  <span className="truncate">Available</span>
+                  <span className="truncate">Available Balance</span>
                 </CardDescription>
               </CardHeader>
-              <CardContent className="p-3 sm:p-6 pt-0">
+              <CardContent className="p-3 sm:p-6 pt-0 space-y-2">
                 <div className="flex items-center gap-2">
-                  <img src="https://cryptologos.cc/logos/usd-coin-usdc-logo.png" alt="USDC" className="h-5 w-5" />
-                  <p className="text-xl sm:text-3xl font-display font-bold text-primary">
-                    ${stats.available.toFixed(2)}
+                  <img src="https://cryptologos.cc/logos/usd-coin-usdc-logo.png" alt="USDC" className="h-5 w-5 flex-shrink-0" />
+                  <p className="text-xl sm:text-2xl font-display font-bold">
+                    {usdcBalance} {usdcSymbol}
                   </p>
                 </div>
-                <div className="flex items-center gap-2 mt-1">
-                  <img src="https://cryptologos.cc/logos/ethereum-eth-logo.png" alt="ETH" className="h-4 w-4" />
-                  <p className="text-xs text-muted-foreground">
-                    {stats.available_eth.toFixed(4)} ETH
+                <div className="flex items-center gap-2">
+                  <img src="https://cryptologos.cc/logos/ethereum-eth-logo.png" alt="ETH" className="h-5 w-5 flex-shrink-0" />
+                  <p className="text-xl sm:text-2xl font-display font-bold">
+                    {ethBalance} {ethSymbol}
                   </p>
                 </div>
               </CardContent>

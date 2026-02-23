@@ -371,61 +371,7 @@ export default function SettingsPage() {
           </CardContent>
         </Card>
 
-        {/* Wallet Settings */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
-              <Wallet className="h-5 w-5" />
-              Embedded Wallet
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {walletAddress ? (
-              <div className="p-4 rounded-lg border border-green-500/50 bg-green-500/10">
-                <div className="flex items-start gap-3">
-                  <Wallet className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium text-sm">Wallet Active</p>
-                    <p className="text-xs text-muted-foreground mt-1 break-all">
-                      {walletAddress}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                <div className="p-4 rounded-lg border border-amber-500/50 bg-amber-500/10">
-                  <div className="flex items-start gap-3">
-                    <AlertTriangle className="h-5 w-5 text-amber-500 flex-shrink-0 mt-0.5" />
-                    <div className="flex-1">
-                      <p className="font-medium text-sm">No Wallet Found</p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Create an embedded wallet to fund tasks and receive payments
-                      </p>
-                    </div>
-                  </div>
-                </div>
-                <Button 
-                  onClick={handleCreateWallet} 
-                  disabled={creatingWallet}
-                  className="w-full"
-                >
-                  {creatingWallet ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Creating Wallet...
-                    </>
-                  ) : (
-                    <>
-                      <Plus className="h-4 w-4 mr-2" />
-                      Create Embedded Wallet
-                    </>
-                  )}
-                </Button>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+
 
         {/* Delete Account Confirmation Dialog */}
         <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
