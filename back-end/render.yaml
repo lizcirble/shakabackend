@@ -3,7 +3,8 @@ services:
     name: datarand-backend
     env: node
     region: oregon
-    buildCommand: npm install -g pnpm && pnpm install --frozen-lockfile
+    rootDir: back-end
+    buildCommand: npm install
     startCommand: node src/index.js
     autoDeploy: true
     envVars:
