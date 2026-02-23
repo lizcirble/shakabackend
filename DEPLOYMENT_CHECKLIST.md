@@ -1,179 +1,113 @@
-# Enterprise Compute Deployment Checklist
+# DataRand Deployment Checklist
 
-## ✅ What's Been Done
+## ✅ Completed Changes
 
-### Backend
-- ✅ Network service for device management
-- ✅ Network controller with endpoints
-- ✅ Routes added to app.js
-- ✅ Public `/api/v1/network/stats` endpoint
+### 1. Network Configuration
+- ✅ Removed Arbitrum Mainnet from all configs
+- ✅ Using only Arbitrum Sepolia testnet
+- ✅ Updated wagmiConfig.ts
+- ✅ Updated privyConfig.ts
+- ✅ Updated Earnings page (removed network selector)
 
-### Frontend
-- ✅ Heartbeat system integrated into useComputeDevices
-- ✅ Auto device registration on compute start
-- ✅ 90-second heartbeat intervals
-- ✅ Device deactivation on compute stop
-- ✅ NetworkStats component showing real-time aggregated power
-- ✅ NetworkStats displayed on ComputeShare page
+### 2. Wallet Balance
+- ✅ Using real embedded wallet balance from Privy
+- ✅ Fetching USDC and ETH balances from Arbitrum Sepolia
+- ✅ Fixed balance alignment in Earnings page
 
-### Database
-- ✅ SQL migration file created: `sql/11_compute_devices.sql`
+### 3. Device Detection
+- ✅ Improved device name detection (shows actual OS and model)
+- ✅ Real device specs from browser APIs (RAM, CPU, Storage)
 
----
+### 4. Data Storage
+- ✅ All ComputeShare data stored in Supabase:
+  - `compute_devices` - device specs and status
+  - `compute_sessions` - earnings and session data
+  - `education_fund_stats` - global education fund
+- ✅ Profile page uses real data from Supabase
+- ✅ Earnings page uses real wallet balances
+- ✅ ComputeShare page uses real session data
 
-## 🚀 Deployment Steps
+## ⚠️ ACTION REQUIRED
 
-### 1. Run Database Migration
+### Run SQL in Supabase SQL Editor
 
-**Option A: Via Supabase Dashboard**
-1. Go to https://supabase.com/dashboard
-2. Select your project
-3. Go to SQL Editor
-4. Copy contents of `sql/11_compute_devices.sql`
-5. Click "Run"
+**IMPORTANT**: You must run this SQL to deploy all functions:
 
-**Option B: Via CLI**
-```bash
-psql $DATABASE_URL -f sql/11_compute_devices.sql
-```
+1. Go to: https://supabase.com/dashboard/project/zdeochldezvbcurngkdn/sql/new
+2. Copy the entire contents of: `sql/16_complete_deployment.sql`
+3. Click "Run"
 
-### 2. Deploy Backend (Render)
+This SQL file includes:
+- ✅ `delete_user_account()` function - Fix delete account feature
+- ✅ `get_network_stats()` function - Network power stats
+- ✅ `calculate_compute_score()` function - Device scoring
+- ✅ All necessary tables and indexes
+- ✅ RLS policies for security
 
-Backend is already deployed to Render. It will auto-deploy from GitHub.
+### After Running SQL
 
-**Verify deployment:**
-```bash
-curl https://datarand.onrender.com/api/v1/network/stats
-```
+The following will work:
+1. ✅ Delete account button in Settings
+2. ✅ Network Power stats showing real data (Active Nodes, CPU Cores, RAM, Compute Score)
+3. ✅ ComputeShare earnings tracking
+4. ✅ Education fund contributions
 
-Expected response:
-```json
-{
-  "success": true,
-  "data": {
-    "active_nodes": 0,
-    "total_ram_gb": 0,
-    "total_cpu_cores": 0,
-    "total_storage_gb": 0,
-    "total_compute_score": 0
-  }
-}
-```
+## 📊 Data Flow Verification
 
-### 3. Deploy Frontend (Vercel)
+### Profile Page
+- ✅ Total Earnings: From `compute_sessions` table
+- ✅ Tasks Completed: From `task_assignments` table
+- ✅ Reputation Score: From `profiles` table
+- ✅ Created Tasks: From `tasks` table
 
-Frontend is already deployed to Vercel. It will auto-deploy from GitHub.
+### Earnings Page
+- ✅ Available Balance: Real wallet balance from Arbitrum Sepolia
+- ✅ USDC Balance: From embedded wallet contract
+- ✅ ETH Balance: From embedded wallet
+- ✅ Transactions: From blockchain (Arbiscan API)
 
-**Verify:**
-1. Go to https://datarand.vercel.app/compute
-2. Toggle compute on
-3. Check browser console for:
-   - "Device registered: [device-id]"
-   - "Heartbeat sent for phone/laptop"
-4. Check NetworkStats card appears on page
+### ComputeShare Page
+- ✅ Session Earnings: From `compute_sessions` table
+- ✅ Total Earned: Sum of all sessions
+- ✅ Education Contribution: 15% of total earned
+- ✅ Network Power: From `get_network_stats()` function
+- ✅ Device Status: From `compute_devices` table
 
----
+### Settings Page
+- ✅ Profile Info: From `profiles` table
+- ✅ Delete Account: Uses `delete_user_account()` function
+- ✅ Wallet removed (now only in Earnings page)
 
-## 🧪 Testing
+## 🔧 Testing Steps
 
-### Test Device Registration
-1. Go to ComputeShare page
-2. Toggle phone or laptop compute ON
-3. Open browser console
-4. Should see: `Device registered: [uuid]`
-5. Should see: `Heartbeat sent for phone` (after 90 seconds)
+1. **Deploy SQL**: Run `sql/16_complete_deployment.sql` in Supabase
+2. **Test Delete Account**: 
+   - Go to Settings → Delete Account
+   - Should work without errors
+3. **Test ComputeShare**:
+   - Toggle device ON
+   - Check Network Power stats update
+   - Verify earnings accumulate
+4. **Test Wallet**:
+   - Check balance shows real USDC/ETH from Sepolia
+   - Try sending transaction (testnet only)
+5. **Test Profile**:
+   - Verify all stats show real data
+   - Check created tasks display
 
-### Test Network Stats
-1. With compute active, check NetworkStats card
-2. Should show:
-   - Active Nodes: 1
-   - CPU Cores: [your cores]
-   - RAM: [your RAM]
-   - Compute Score: [calculated]
+## 🚀 Next Steps
 
-### Test Heartbeat
-1. Keep compute active for 2+ minutes
-2. Check console for heartbeat logs every 90 seconds
-3. Turn compute OFF
-4. Should see: `Device deactivated: phone/laptop`
+After SQL deployment:
+1. Test all pages thoroughly
+2. Verify data persistence across sessions
+3. Check mobile responsiveness
+4. Test with multiple users
+5. Monitor Supabase logs for errors
 
-### Test Enterprise Endpoint
-```bash
-# Should return aggregated stats
-curl https://datarand.onrender.com/api/v1/network/stats
-```
+## 📝 Notes
 
----
-
-## 📊 Monitoring
-
-### Check Active Devices (Supabase)
-```sql
-SELECT 
-  device_name,
-  device_type,
-  ram_gb,
-  cpu_cores,
-  compute_score,
-  is_active,
-  last_seen
-FROM compute_devices
-WHERE is_active = true
-  AND last_seen > now() - interval '5 minutes'
-ORDER BY last_seen DESC;
-```
-
-### Check Network Stats
-```sql
-SELECT * FROM get_network_stats();
-```
-
----
-
-## 🐛 Troubleshooting
-
-### Issue: Network stats showing 0
-**Solution:** 
-- Make sure SQL migration ran successfully
-- Check if any devices are active
-- Verify heartbeat is running (check console logs)
-
-### Issue: Heartbeat not sending
-**Solution:**
-- Check browser console for errors
-- Verify backend is deployed and accessible
-- Check authentication token is valid
-
-### Issue: Device not registering
-**Solution:**
-- Check browser console for registration errors
-- Verify API endpoint is accessible
-- Check user is authenticated
-
----
-
-## 🎯 Next Steps (Optional Enhancements)
-
-1. **Add caching** - Cache network stats in Redis for faster response
-2. **Add metrics dashboard** - Create admin page showing device distribution
-3. **Add device health** - Track device uptime and reliability scores
-4. **Add geographic distribution** - Show where devices are located
-5. **Add device filtering** - Allow enterprises to filter by specs
-
----
-
-## 📝 Summary
-
-✅ **Backend:** Fully implemented and deployed  
-✅ **Frontend:** Fully integrated with existing UI  
-✅ **Database:** Migration ready to run  
-✅ **Testing:** All endpoints functional  
-✅ **Documentation:** Complete implementation guide  
-
-**Status:** Ready for production deployment after running SQL migration!
-
-**Commits:**
-- `ada86556` - Enterprise compute aggregation system
-- `7ed62439` - Frontend integration with heartbeat
-
-**Time to deploy:** ~5 minutes (just run the SQL migration)
+- All pages now use **real data** from Supabase
+- Wallet uses **real balances** from Arbitrum Sepolia
+- Network is **testnet only** (Arbitrum Sepolia)
+- Device detection uses **real browser APIs**
+- Education fund tracks **real contributions**
