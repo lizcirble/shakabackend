@@ -1,39 +1,32 @@
-/**
- * @file middleware/rateLimitMiddleware.js
- * @description Middleware for rate limiting requests to prevent abuse.
- * This is a basic in-memory implementation. For production, consider
- * a more robust solution like 'express-rate-limit' with a Redis store.
- */
+import rateLimit from 'express-rate-limit';
+import { logger } from '../utils/logger.js';
 
-const rateLimit = {}; // Stores { ip: { count: number, lastReset: Date } }
-const WINDOW_SIZE_MS = 60 * 60 * 1000; // 1 hour
-const MAX_REQUESTS = 100; // Max 100 requests per hour per IP
+// Strict rate limiting for anonymous task creation
+const anonymousTaskLimiter = rateLimit({
+    windowMs: 60 * 60 * 1000, // 1 hour
+    max: 3, // 3 tasks per hour per IP
+    message: 'Too many tasks created from this IP. Please authenticate or try again later.',
+    standardHeaders: true,
+    legacyHeaders: false,
+    skip: (req) => {
+        // Skip rate limiting for authenticated users
+        return req.isAuthenticated === true;
+    },
+    handler: (req, res) => {
+        logger.warn(`Rate limit exceeded for IP: ${req.ip}`);
+        res.status(429).json({
+            success: false,
+            message: 'Too many tasks created. Please authenticate for higher limits.',
+        });
+    },
+});
 
-const rateLimitMiddleware = (req, res, next) => {
-    const ip = req.ip; // Or req.headers['x-forwarded-for'] if behind a proxy
+// General API rate limiter
+const apiLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 100, // 100 requests per 15 minutes
+    standardHeaders: true,
+    legacyHeaders: false,
+});
 
-    if (!rateLimit[ip]) {
-        rateLimit[ip] = {
-            count: 0,
-            lastReset: Date.now(),
-        };
-    }
-
-    const currentTime = Date.now();
-    if (currentTime - rateLimit[ip].lastReset > WINDOW_SIZE_MS) {
-        // Reset window
-        rateLimit[ip].count = 0;
-        rateLimit[ip].lastReset = currentTime;
-    }
-
-    if (rateLimit[ip].count >= MAX_REQUESTS) {
-        return res.status(429).json({ message: 'Too many requests, please try again later.' });
-    }
-
-    rateLimit[ip].count++;
-    next();
-};
-
-module.exports = {
-    rateLimitMiddleware,
-};
+export { anonymousTaskLimiter, apiLimiter };

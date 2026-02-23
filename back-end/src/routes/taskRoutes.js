@@ -1,29 +1,30 @@
 import express from 'express';
 import { taskController } from '../controllers/taskController.js';
 import { authMiddleware } from '../middleware/authMiddleware.js';
+import { optionalAuth } from '../middleware/optionalAuth.js';
+import { anonymousTaskLimiter } from '../middleware/rateLimitMiddleware.js';
 
 const router = express.Router();
 
-// All task routes are protected and require a valid JWT
+// Public route: Create task (with optional auth and rate limiting)
+router.post('/', optionalAuth, anonymousTaskLimiter, taskController.createTask);
+
+// Public route: Get available tasks (no auth required)
+router.get('/available', taskController.getAvailableTasks);
+
+// Public route: Get specific task details (no auth required)
+router.get('/:id', taskController.getTask);
+
+// Protected routes below - require authentication
 router.use(authMiddleware);
 
 // Route to get current user's tasks
 router.get('/', taskController.getMyTasks);
 
-// Route to get available tasks (for workers)
-router.get('/available', taskController.getAvailableTasks);
-
 // Route to get my assignments (worker)
 router.get('/my-assignments', taskController.getMyAssignedTasks);
 
-// Route to create a new task
-router.post('/', taskController.createTask);
-
-// Route to get a specific task
-router.get('/:id', taskController.getTask);
-
 // Route to fund a task (prepare transaction)
-// The :id parameter will be the task's ID from the database
 router.post('/:id/fund', taskController.fundTask);
 
 // Route to confirm task funding after user signs transaction

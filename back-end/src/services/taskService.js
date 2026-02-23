@@ -210,16 +210,28 @@ const splitAndOffloadToWSA = async (task) => {
 /**
  * Creates a new task as a DRAFT in the database and on-chain.
  * @param {object} taskData - The data for the new task from the request.
- * @param {string} creatorId - The ID of the user creating the task.
+ * @param {string|null} creatorId - The ID of the user creating the task (null for anonymous).
  * @returns {Promise<object>} The newly created task object.
  */
 const createTask = async (taskData, creatorId) => {
-    const creatorContext = await resolveCreatorContext(creatorId);
-    if (!creatorContext.profileId) {
-        throw new ApiError(404, 'Task creator profile not found.');
+    let creatorContext = null;
+    
+    // Handle authenticated users
+    if (creatorId) {
+        creatorContext = await resolveCreatorContext(creatorId);
+        if (!creatorContext.profileId) {
+            throw new ApiError(404, 'Task creator profile not found.');
+        }
+        validateTaskInput(taskData, { is_first_task: creatorContext.isFirstTask });
+    } else {
+        // Anonymous user - apply stricter validation
+        validateTaskInput(taskData, { is_first_task: true }); // Treat as first-time user
+        
+        // Additional anonymous user restrictions
+        if (taskData.requiredWorkers > 5) {
+            throw new ApiError(400, 'Anonymous users are limited to 5 workers.');
+        }
     }
-
-    validateTaskInput(taskData, { is_first_task: creatorContext.isFirstTask });
 
     logger.info(`Creating task with data: ${JSON.stringify(taskData, null, 2)}`);
 
@@ -256,12 +268,13 @@ const createTask = async (taskData, creatorId) => {
     const newTask = {
         title,
         description,
-        client_id: creatorContext.profileId,
+        client_id: creatorContext?.profileId || null, // null for anonymous
         task_type_id: taskType?.id || null,
         payout_amount: payoutInWei.toString(),
         worker_count: requiredWorkers,
         status: 'DRAFT',
         expires_at: expiresAt,
+        is_anonymous: !creatorId, // Flag anonymous tasks
     };
 
     const { data: createdTask, error: insertError } = await supabase
@@ -275,26 +288,30 @@ const createTask = async (taskData, creatorId) => {
         throw new ApiError(500, `Failed to save task to database: ${insertError.message}`);
     }
 
-    // Try to create task on-chain, but continue even if it fails (for development)
-    try {
-        if (creatorContext.walletAddress) {
+    // Only try on-chain creation for authenticated users with wallets
+    if (creatorContext?.walletAddress) {
+        try {
             await escrowService.createTaskOnChain(
                 createdTask.id,
                 creatorContext.walletAddress,
                 payoutInWei.toString(),
                 requiredWorkers
             );
-        } else {
-            logger.warn(`Skipping on-chain task creation for task ${createdTask.id}: creator wallet not found.`);
+        } catch (chainError) {
+            logger.warn(`On-chain task creation skipped: ${chainError.message}`);
         }
-    } catch (chainError) {
-        logger.warn(`On-chain task creation skipped: ${chainError.message}`);
+    } else {
+        logger.info(`Skipping on-chain task creation for ${creatorId ? 'authenticated user without wallet' : 'anonymous user'}`);
     }
 
     // Check if the task needs to be split and offloaded to WSA
     await splitAndOffloadToWSA(createdTask);
 
-    return { ...createdTask, total_cost_eth: ethers.formatEther(totalCost) };
+    return { 
+        ...createdTask, 
+        total_cost_eth: ethers.formatEther(totalCost),
+        requires_auth: !creatorId,
+    };
 };
 
 /**

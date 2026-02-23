@@ -1,21 +1,44 @@
 import { taskService } from '../services/taskService.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { ApiError } from '../utils/apiError.js';
+import { logger } from '../utils/logger.js';
 
 const createTask = asyncHandler(async (req, res) => {
     const taskData = req.body;
-    const creatorId = req.user.id; // Attached from authMiddleware
-
+    
+    // For authenticated users, use their ID
+    // For anonymous users, use null (will be handled in service)
+    const creatorId = req.isAuthenticated ? req.user.id : null;
+    
     if (!taskData) {
         throw new ApiError(400, 'Task data is required.');
+    }
+
+    // Additional validation for anonymous users
+    if (!req.isAuthenticated) {
+        logger.info('Anonymous task creation attempt');
+        
+        // Stricter limits for anonymous users
+        if (taskData.requiredWorkers > 5) {
+            throw new ApiError(400, 'Anonymous users are limited to 5 workers. Please authenticate for higher limits.');
+        }
+        
+        // Lower payout limit for anonymous users
+        const maxAnonymousPayout = 0.05; // 0.05 ETH
+        if (parseFloat(taskData.payoutPerWorker) > maxAnonymousPayout) {
+            throw new ApiError(400, `Anonymous users are limited to ${maxAnonymousPayout} ETH per worker. Please authenticate for higher limits.`);
+        }
     }
 
     const createdTask = await taskService.createTask(taskData, creatorId);
 
     res.status(201).json({
         success: true,
-        message: 'Task created successfully as DRAFT. Please proceed to funding.',
+        message: creatorId 
+            ? 'Task created successfully as DRAFT. Please proceed to funding.'
+            : 'Task created successfully. Please authenticate to fund and activate this task.',
         task: createdTask,
+        requiresAuth: !creatorId,
     });
 });
 
