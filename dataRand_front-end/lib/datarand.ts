@@ -210,24 +210,35 @@ export function getDeviceFingerprint() {
 
 // Get wallet address from Privy user object
 export function getPrivyWalletAddress(privyUser: any): string | null {
-  if (!privyUser || !privyUser.linked_accounts) {
+  if (!privyUser) {
     return null;
   }
 
-  // Prioritize embedded wallet
-  const embeddedWallet = privyUser.linked_accounts.find(
-    (acc: any) => acc.type === 'wallet' && acc.wallet_type === 'embedded'
-  );
-  if (embeddedWallet) {
-    return embeddedWallet.address;
+  // Check for smart wallet first (Coinbase Smart Wallet)
+  if (privyUser.smartWallet?.address) {
+    return privyUser.smartWallet.address;
   }
 
-  // Fallback to any other linked wallet
-  const anyWallet = privyUser.linked_accounts.find(
-    (acc: any) => acc.type === 'wallet'
-  );
-  if (anyWallet) {
-    return anyWallet.address;
+  // Check for regular wallet
+  if (privyUser.wallet?.address) {
+    return privyUser.wallet.address;
+  }
+
+  // Fallback to linked_accounts
+  if (privyUser.linked_accounts) {
+    const embeddedWallet = privyUser.linked_accounts.find(
+      (acc: any) => acc.type === 'wallet' && acc.wallet_type === 'embedded'
+    );
+    if (embeddedWallet) {
+      return embeddedWallet.address;
+    }
+
+    const anyWallet = privyUser.linked_accounts.find(
+      (acc: any) => acc.type === 'wallet'
+    );
+    if (anyWallet) {
+      return anyWallet.address;
+    }
   }
 
   return null;
