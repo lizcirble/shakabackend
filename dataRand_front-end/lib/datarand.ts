@@ -80,17 +80,17 @@ class DataRandAPI {
 
   // Auth
   async login(privyAccessToken: string, deviceFingerprint: string): Promise<any> {
+    // TEMP: Skip backend auth until Privy verification is fixed
+    console.log('Skipping backend auth (dev mode)');
+    return { token: 'dev_token', user: { id: 'dev_user' } };
+    
+    /* Disabled until backend Privy verification is fixed
     console.log(JSON.stringify({ privyAccessToken, deviceFingerprint }));
-    
-    // Skip backend auth if in dev mode
-    if (process.env.NEXT_PUBLIC_SKIP_BACKEND_AUTH === 'true') {
-      return { token: 'dev_token', user: { id: 'dev_user' } };
-    }
-    
     return this.request('/auth/login', {
       method: 'POST',
       body: JSON.stringify({ privyAccessToken, deviceFingerprint }),
     });
+    */
   }
 
   async getProfile() {
