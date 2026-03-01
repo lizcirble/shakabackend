@@ -169,101 +169,110 @@ function Earnings() {
     setLoading(true); // Show loading state
   };
 
-  // Fetch blockchain transactions from Arbiscan API
+  // Fetch blockchain transactions from Alchemy API
   const fetchBlockchainTransactions = async (walletAddress: string, chainId: number) => {
     try {
-      const isTestnet = chainId === arbitrumSepolia.id;
-      const apiUrl = isTestnet 
-        ? `https://api-sepolia.arbiscan.io/api`
-        : `https://api.arbiscan.io/api`;
-      
-      const apiKey = process.env.NEXT_PUBLIC_ARBISCAN_API_KEY || "YourApiKeyToken";
-      
-      console.log('Fetching transactions for:', walletAddress, 'on chain:', chainId);
-      
-      // Fetch normal transactions
-      const normalTxResponse = await fetch(
-        `${apiUrl}?module=account&action=txlist&address=${walletAddress}&startblock=0&endblock=99999999&sort=desc&apikey=${apiKey}`
-      );
-      const normalTxData = await normalTxResponse.json();
-      
-      console.log('Normal tx response:', normalTxData.status, normalTxData.message);
-      
-      // Fetch internal transactions
-      const internalTxResponse = await fetch(
-        `${apiUrl}?module=account&action=txlistinternal&address=${walletAddress}&startblock=0&endblock=99999999&sort=desc&apikey=${apiKey}`
-      );
-      const internalTxData = await internalTxResponse.json();
-      
-      // Fetch ERC20 token transfers
-      const tokenTxResponse = await fetch(
-        `${apiUrl}?module=account&action=tokentx&address=${walletAddress}&startblock=0&endblock=99999999&sort=desc&apikey=${apiKey}`
-      );
-      const tokenTxData = await tokenTxResponse.json();
+      const isArbitrumSepolia = chainId === arbitrumSepolia.id;
+      if (!isArbitrumSepolia) {
+        console.log('Unsupported chain:', chainId);
+        return [];
+      }
+
+      const alchemyUrl = process.env.NEXT_PUBLIC_RPC_URL;
+      if (!alchemyUrl) {
+        console.error('RPC URL not configured');
+        return [];
+      }
+
+      console.log('Fetching transactions for:', walletAddress);
+
+      // Use Alchemy's getAssetTransfers method
+      const response = await fetch(alchemyUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          jsonrpc: '2.0',
+          id: 1,
+          method: 'alchemy_getAssetTransfers',
+          params: [{
+            fromBlock: '0x0',
+            toBlock: 'latest',
+            fromAddress: walletAddress,
+            category: ['external', 'internal', 'erc20'],
+            withMetadata: true,
+            maxCount: '0x64'
+          }]
+        })
+      });
+
+      const outgoingData = await response.json();
+
+      // Fetch incoming transactions
+      const incomingResponse = await fetch(alchemyUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          jsonrpc: '2.0',
+          id: 2,
+          method: 'alchemy_getAssetTransfers',
+          params: [{
+            fromBlock: '0x0',
+            toBlock: 'latest',
+            toAddress: walletAddress,
+            category: ['external', 'internal', 'erc20'],
+            withMetadata: true,
+            maxCount: '0x64'
+          }]
+        })
+      });
+
+      const incomingData = await incomingResponse.json();
 
       const allTxs: BlockchainTransaction[] = [];
 
-      // Process normal transactions
-      if (normalTxData.status === "1" && Array.isArray(normalTxData.result)) {
-        console.log('Found', normalTxData.result.length, 'normal transactions');
-        normalTxData.result.forEach((tx: any) => {
+      // Process outgoing transactions
+      if (outgoingData.result?.transfers) {
+        outgoingData.result.transfers.forEach((tx: any) => {
           allTxs.push({
             hash: tx.hash,
             from: tx.from,
-            to: tx.to,
-            value: formatUnits(BigInt(tx.value), 18),
-            timestamp: parseInt(tx.timeStamp) * 1000,
-            blockNumber: parseInt(tx.blockNumber),
-            type: tx.from.toLowerCase() === walletAddress.toLowerCase() ? "outgoing" : "incoming",
-            status: tx.isError === "0" ? "success" : "failed",
-            gasUsed: tx.gasUsed,
-            tokenSymbol: "ETH",
+            to: tx.to || 'Contract Creation',
+            value: tx.value?.toString() || '0',
+            timestamp: new Date(tx.metadata.blockTimestamp).getTime(),
+            blockNumber: parseInt(tx.blockNum, 16),
+            type: 'outgoing',
+            status: 'success',
+            tokenSymbol: tx.asset || 'ETH',
           });
         });
       }
 
-      // Process internal transactions
-      if (internalTxData.status === "1" && Array.isArray(internalTxData.result)) {
-        internalTxData.result.forEach((tx: any) => {
+      // Process incoming transactions
+      if (incomingData.result?.transfers) {
+        incomingData.result.transfers.forEach((tx: any) => {
           allTxs.push({
             hash: tx.hash,
             from: tx.from,
-            to: tx.to,
-            value: formatUnits(BigInt(tx.value), 18),
-            timestamp: parseInt(tx.timeStamp) * 1000,
-            blockNumber: parseInt(tx.blockNumber),
-            type: tx.from.toLowerCase() === walletAddress.toLowerCase() ? "outgoing" : "incoming",
-            status: tx.isError === "0" ? "success" : "failed",
-            tokenSymbol: "ETH",
+            to: tx.to || walletAddress,
+            value: tx.value?.toString() || '0',
+            timestamp: new Date(tx.metadata.blockTimestamp).getTime(),
+            blockNumber: parseInt(tx.blockNum, 16),
+            type: 'incoming',
+            status: 'success',
+            tokenSymbol: tx.asset || 'ETH',
           });
         });
       }
 
-      // Process token transactions
-      if (tokenTxData.status === "1" && Array.isArray(tokenTxData.result)) {
-        tokenTxData.result.forEach((tx: any) => {
-          const decimals = parseInt(tx.tokenDecimal) || 18;
-          allTxs.push({
-            hash: tx.hash,
-            from: tx.from,
-            to: tx.to,
-            value: formatUnits(BigInt(tx.value), decimals),
-            timestamp: parseInt(tx.timeStamp) * 1000,
-            blockNumber: parseInt(tx.blockNumber),
-            type: tx.from.toLowerCase() === walletAddress.toLowerCase() ? "outgoing" : "incoming",
-            status: "success",
-            tokenSymbol: tx.tokenSymbol,
-            tokenValue: formatUnits(BigInt(tx.value), decimals),
-          });
-        });
-      }
+      // Sort by timestamp descending and remove duplicates
+      const uniqueTxs = Array.from(
+        new Map(allTxs.map(tx => [tx.hash, tx])).values()
+      ).sort((a, b) => b.timestamp - a.timestamp);
 
-      // Sort by timestamp descending
-      allTxs.sort((a, b) => b.timestamp - a.timestamp);
-      
-      return allTxs;
+      console.log('Found', uniqueTxs.length, 'transactions');
+      return uniqueTxs;
     } catch (error) {
-      console.error("Error fetching blockchain transactions:", error);
+      console.error('Error fetching blockchain transactions:', error);
       return [];
     }
   };
